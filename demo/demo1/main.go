@@ -29,5 +29,5 @@ func main() {
 		}, false)
 		game1.Startup()
 	}()
-
+	wg.Wait()
 }
