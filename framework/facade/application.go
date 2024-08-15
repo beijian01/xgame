@@ -3,10 +3,9 @@ package cherryFacade
 type (
 	// INode 节点信息
 	INode interface {
-		NodeId() string   // 节点id(全局唯一)
-		NodeType() string // 节点类型
-		Address() string  // 对外网络监听地址(前端节点用)
-		Enabled() bool    // 是否启用
+		GetNodeId() string   // 节点id(全局唯一)
+		GetNodeType() string // 节点类型
+		GetAddress() string  // 对外网络监听地址(网关节点用)
 	}
 
 	IApplication interface {

@@ -75,7 +75,7 @@ func (w *WSConnector) Start() {
 		logrus.Fatalf("failed to listen: %s", err)
 	}
 
-	logrus.Infof("Websocket connector listening at Address %s", w.address)
+	logrus.Infof("Websocket connector listening at GetAddress %s", w.address)
 	if w.certFile != "" || w.keyFile != "" {
 		logrus.Infof("certFile = %s, keyFile = %s", w.certFile, w.keyFile)
 	}

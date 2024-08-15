@@ -6,16 +6,13 @@ import (
 	"github.com/beijian01/xgame/pb"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
+	"time"
 
 	cerr "github.com/beijian01/xgame/framework/error"
 	cfacade "github.com/beijian01/xgame/framework/facade"
 
 	"github.com/nats-io/nats.go"
 )
-
-type ResponseWaitMgr struct {
-	pbChan map[uint32]chan proto.Message
-}
 
 type (
 	Cluster struct {
@@ -26,17 +23,77 @@ type (
 
 		natsConn *NatsConn
 
-		msgHandlers   MessageHandlerMgr
-		asyncCallback rpcCallbackMgr
-		responseWait  ResponseWaitMgr
+		msgHandlers   *MessageHandlerMgr
+		asyncCallback *rpcCallbackMgr
+		responseWait  *ResponseWaitMgr
 	}
 )
+
+func (p *Cluster) PublishMsg(nodeId string, msg proto.Message) error {
+	if !p.app.Running() {
+		return cerr.ClusterRPCClientIsStop
+	}
+
+	nodeType, err := p.app.Discovery().GetType(nodeId)
+	if err != nil {
+		return err
+	}
+	subject := getRemoteSubject(p.prefix, nodeType, nodeId)
+
+	bytes, err := packet.PackSvrMsg(&packet.SvrMessage{
+		PBMsg: msg,
+		PBExt: &pb.SvrExtend{
+			SourceId: p.app.GetNodeId(),
+			TargetId: nodeId,
+			MsgType:  pb.MsgType_SvrMsgTypPublish,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return p.natsConn.Publish(subject, bytes)
+}
+
+func (p *Cluster) RequestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error) {
+	ext := &pb.SvrExtend{
+		SourceId: p.app.GetNodeId(),
+		TargetId: nodeId,
+		MsgType:  pb.MsgType_SvrMsgTypRequestWait,
+		Mid:      p.responseWait.NextMid(),
+	}
+	bytes, err := packet.PackSvrMsg(&packet.SvrMessage{
+		PBMsg: req,
+		PBExt: ext,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if err = p.SendBytes(nodeId, bytes); err != nil {
+		return nil, err
+	}
+	return p.responseWait.WaitResponse(ext.Mid), nil
+}
+
+func (p *Cluster) RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error {
+	//TODO implement me
+	panic("implement me")
+	return nil
+}
 
 func NewCluster(app cfacade.IApplication) cfacade.ICluster {
 	cluster := &Cluster{
 		app:        app,
 		bufferSize: 1024,
+		prefix:     "node",
+		//natsSub:       newNatsSubject(getRemoteSubject()),
+		//natsConn:      nil,
+		msgHandlers:   NewMessageHandlerMgr(),
+		asyncCallback: newRpcHandlerMgr(),
+		responseWait:  newResponseWaitMgr(),
 	}
+	cluster.natsConn = NewNatsConn()
+	cluster.natsSub = newNatsSubject(getRemoteSubject(cluster.prefix, app.GetNodeType(), app.GetNodeId()), cluster.bufferSize)
 
 	return cluster
 }
@@ -140,27 +197,7 @@ func (p *Cluster) receive() {
 	}
 }
 
-func (p *Cluster) SendMsg(nodeId string, request proto.Message) error {
-	if !p.app.Running() {
-		return cerr.ClusterRPCClientIsStop
-	}
-
-	nodeType, err := p.app.Discovery().GetType(nodeId)
-	if err != nil {
-		return err
-	}
-	subject := getRemoteSubject(p.prefix, nodeType, nodeId)
-	// todo 按照约定格式组装消息
-	bytes, err := proto.Marshal(request)
-	if err != nil {
-		logrus.Warn(err)
-		return err
-	}
-
-	return p.natsConn.Publish(subject, bytes)
-}
-
-func (p *Cluster) PublishBytes(nodeId string, data []byte) error {
+func (p *Cluster) SendBytes(nodeId string, data []byte) error {
 	if !p.app.Running() {
 		return cerr.ClusterRPCClientIsStop
 	}

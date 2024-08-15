@@ -54,7 +54,7 @@ func (p *ETCD) Load(app cfacade.IApplication) {
 }
 
 func (p *ETCD) OnStop() {
-	key := fmt.Sprintf(registerKeyFormat, p.app.NodeId())
+	key := fmt.Sprintf(registerKeyFormat, p.app.GetNodeId())
 	_, err := p.cli.Delete(context.Background(), key)
 	logrus.Infof("etcd stopping! err = %v", err)
 
@@ -128,8 +128,8 @@ func (p *ETCD) getLeaseId() {
 
 func (p *ETCD) register() {
 	registerMember := &pb.Member{
-		NodeId:   p.app.NodeId(),
-		NodeType: p.app.NodeType(),
+		NodeId:   p.app.GetNodeId(),
+		NodeType: p.app.GetNodeType(),
 		Address:  p.app.RpcAddress(),
 		Settings: make(map[string]string),
 	}
@@ -140,7 +140,7 @@ func (p *ETCD) register() {
 		return
 	}
 
-	key := fmt.Sprintf(registerKeyFormat, p.app.NodeId())
+	key := fmt.Sprintf(registerKeyFormat, p.app.GetNodeId())
 	_, err = p.cli.Put(context.Background(), key, jsonString, clientv3.WithLease(p.leaseID))
 	if err != nil {
 		logrus.Fatal(err)

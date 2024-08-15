@@ -212,7 +212,7 @@ func (a *Agent) processPacket(msg *packet.CliMessage) {
 	svrMsg := &packet.SvrMessage{
 		PBMsg: msg.PBMsg,
 		PBExt: &pb.SvrExtend{
-			SourceId: a.NodeId(),
+			SourceId: a.GetNodeId(),
 			TargetId: a.agentMgr.pbRoute.route2nodeTyp[msg.Route],
 			Mid:      msg.MID,
 			Sid:      a.SID(),
@@ -226,7 +226,7 @@ func (a *Agent) processPacket(msg *packet.CliMessage) {
 		return
 	}
 	if member, ok := a.Discovery().Random(a.agentMgr.pbRoute.route2nodeTyp[msg.Route]); ok {
-		a.Cluster().PublishBytes(member.GetNodeId(), data)
+		a.Cluster().SendBytes(member.GetNodeId(), data)
 	}
 
 	// update last time

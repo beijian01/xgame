@@ -128,8 +128,8 @@ func (a *Application) Startup() {
 	}
 
 	logrus.Info("-------------------------------------------------")
-	logrus.Infof("[nodeId      = %s] application is starting...", a.NodeId())
-	logrus.Infof("[nodeType    = %s]", a.NodeType())
+	logrus.Infof("[nodeId      = %s] application is starting...", a.GetNodeId())
+	logrus.Infof("[nodeType    = %s]", a.GetNodeType())
 	logrus.Infof("[pid         = %d]", os.Getpid())
 
 	// component list
