@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/pb"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"go.etcd.io/etcd/api/v3/mvccpb"
@@ -126,7 +127,7 @@ func (p *ETCD) getLeaseId() {
 }
 
 func (p *ETCD) register() {
-	registerMember := &cproto.Member{
+	registerMember := &pb.Member{
 		NodeId:   p.app.NodeId(),
 		NodeType: p.app.NodeType(),
 		Address:  p.app.RpcAddress(),

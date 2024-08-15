@@ -1,16 +1,13 @@
 package cherry
 
 import (
+	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/util"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"sync/atomic"
 	"syscall"
-
-	cutils "github.com/beijian01/xgame/framework/extend/utils"
-	cfacade "github.com/beijian01/xgame/framework/facade"
-	clog "github.com/beijian01/xgame/framework/logger"
-
-	cprofile "github.com/beijian01/xgame/framework/profile"
 )
 
 type (
@@ -27,19 +24,7 @@ type (
 	}
 )
 
-// NewApp create new application instance
-func NewApp(profileFilePath, nodeId string, isFrontend bool) *Application {
-	node, err := cprofile.Init(profileFilePath, nodeId)
-	if err != nil {
-		panic(err)
-	}
-
-	return NewAppNode(node, isFrontend)
-}
-
 func NewAppNode(node cfacade.INode, isFrontend bool) *Application {
-	// set logger
-	logrus.SetNodeLogger(node)
 
 	app := &Application{
 		INode:      node,
@@ -135,10 +120,6 @@ func (a *Application) Startup() {
 		return
 	}
 
-	defer func() {
-		logrus.Flush()
-	}()
-
 	// add connector component
 	if a.netParser != nil {
 		for _, connector := range a.netParser.Connectors() {
@@ -150,15 +131,6 @@ func (a *Application) Startup() {
 	logrus.Infof("[nodeId      = %s] application is starting...", a.NodeId())
 	logrus.Infof("[nodeType    = %s]", a.NodeType())
 	logrus.Infof("[pid         = %d]", os.Getpid())
-	logrus.Infof("[profilePath = %s]", cprofile.Path())
-	logrus.Infof("[profileName = %s]", cprofile.Name())
-	logrus.Infof("[env         = %s]", cprofile.Env())
-	logrus.Infof("[debug       = %v]", cprofile.Debug())
-	logrus.Infof("[printLevel  = %s]", cprofile.PrintLevel())
-	logrus.Infof("[logLevel    = %s]", logrus.DefaultLogger.LogLevel)
-	logrus.Infof("[stackLevel  = %s]", logrus.DefaultLogger.StackLevel)
-	logrus.Infof("[writeFile   = %v]", logrus.DefaultLogger.EnableWriteFile)
-	logrus.Info("-------------------------------------------------")
 
 	// component list
 	for _, c := range a.components {
@@ -210,7 +182,7 @@ func (a *Application) Startup() {
 
 	if a.onShutdownFn != nil {
 		for _, f := range a.onShutdownFn {
-			cutils.Try(func() {
+			util.Try(func() {
 				f()
 			}, func(errString string) {
 				logrus.Warnf("[onShutdownFn] error = %s", errString)
@@ -220,7 +192,7 @@ func (a *Application) Startup() {
 
 	//all components in reverse order
 	for i := len(a.components) - 1; i >= 0; i-- {
-		cutils.Try(func() {
+		util.Try(func() {
 			logrus.Infof("[component = %s] -> OnBeforeStop().", a.components[i].Name())
 			a.components[i].OnBeforeStop()
 		}, func(errString string) {
@@ -229,7 +201,7 @@ func (a *Application) Startup() {
 	}
 
 	for i := len(a.components) - 1; i >= 0; i-- {
-		cutils.Try(func() {
+		util.Try(func() {
 			logrus.Infof("[component = %s] -> OnStop().", a.components[i].Name())
 			a.components[i].OnStop()
 		}, func(errString string) {
