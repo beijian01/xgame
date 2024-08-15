@@ -16,6 +16,6 @@ func TestTry(t *testing.T) {
 	Try(func() {
 		t.Log("no panic")
 	}, func(errString string) {
-		t.Log(errString)
+		assert.Equal(t, 0, len(errString))
 	})
 }

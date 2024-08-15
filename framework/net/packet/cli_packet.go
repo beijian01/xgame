@@ -22,7 +22,7 @@ var cliMsgEndian = binary.LittleEndian
 type CliMessage struct {
 	MID    uint32
 	Route  uint32 // crc32.CheckSum(proto.message.Name())-> Route ,字符串哈希
-	MsgLen uint32
+	MsgLen uint16
 	RawMsg []byte
 
 	PBMsg proto.Message // RawMsg 反序列化后的结果
@@ -87,21 +87,21 @@ func parseCliMsgHeader(header []byte) (*CliMessage, error) {
 	return msg, nil
 }
 
-func packCliMsg(msg *CliMessage) ([]byte, error) {
+func PackCliMsg(msg *CliMessage) ([]byte, error) {
 	pkg := bytes.NewBuffer([]byte{})
 	var err error
 
 	if msg.Route, msg.RawMsg, err = OnMarshal(msg.PBMsg); err != nil {
-		return nil, cerr.Wrap(err, "packCliMsg OnMarshal")
+		return nil, cerr.Wrap(err, "PackCliMsg OnMarshal")
 	}
-
+	msg.MsgLen = uint16(len(msg.RawMsg))
 	if err = binary.Write(pkg, cliMsgEndian, msg.MID); err != nil {
 		return nil, err
 	}
 	if err = binary.Write(pkg, cliMsgEndian, msg.Route); err != nil {
 		return nil, err
 	}
-	if err = binary.Write(pkg, cliMsgEndian, uint16(len(msg.RawMsg))); err != nil {
+	if err = binary.Write(pkg, cliMsgEndian, msg.MsgLen); err != nil {
 		return nil, err
 	}
 	if err = binary.Write(pkg, cliMsgEndian, msg.RawMsg); err != nil {

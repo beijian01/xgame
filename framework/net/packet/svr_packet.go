@@ -3,12 +3,10 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	cerr "github.com/beijian01/xgame/framework/error"
 	"github.com/beijian01/xgame/pb"
 	"google.golang.org/protobuf/proto"
 	"io"
-	"net"
-
-	cerr "github.com/beijian01/xgame/framework/error"
 )
 
 // [路由ID 4byte][消息体长度 2byte][扩展数据长度 2byte][消息体（介于0~65535 byte之间）][扩展数据]
@@ -23,8 +21,8 @@ var svrMsgEndian = binary.LittleEndian
 
 type SvrMessage struct {
 	Route  uint32 // crc32.CheckSum(proto.message.Name())-> Route ,字符串哈希
-	MsgLen uint32
-	ExtLen uint32
+	MsgLen uint16
+	ExtLen uint16
 	RawMsg []byte
 	RawExt []byte
 
@@ -32,41 +30,43 @@ type SvrMessage struct {
 	PBExt *pb.SvrExtend // RawExt 反序列化后的结果
 }
 
-func ReadSvrMessage(conn net.Conn) (*SvrMessage, bool, error) {
-	header, err := io.ReadAll(io.LimitReader(conn, SvrMsgHeadLength))
+func ParseSvrMessage(data []byte) (*SvrMessage, error) {
+	reader := bytes.NewReader(data)
+
+	header, err := io.ReadAll(io.LimitReader(reader, SvrMsgHeadLength))
 	if err != nil {
-		return nil, true, err
+		return nil, err
 	}
 
-	// if the header has no data, we can consider it as a closed connection
+	// if the header has no reader, we can consider it as a closed connection
 	if len(header) == 0 {
-		return nil, true, cerr.PacketConnectClosed
+		return nil, cerr.PacketConnectClosed
 	}
 
 	msg, err := parseSvrMsgHeader(header)
 	if err != nil {
-		return nil, true, err
+		return nil, err
 	}
 
-	msg.RawMsg, err = io.ReadAll(io.LimitReader(conn, int64(msg.MsgLen)))
+	msg.RawMsg, err = io.ReadAll(io.LimitReader(reader, int64(msg.MsgLen)))
 	if err != nil {
-		return nil, true, err
+		return nil, err
 	}
 	err = proto.Unmarshal(msg.RawMsg, msg.PBMsg)
 	if err != nil {
-		return nil, true, err
+		return nil, err
 	}
 
-	msg.RawExt, err = io.ReadAll(io.LimitReader(conn, int64(msg.ExtLen)))
+	msg.RawExt, err = io.ReadAll(io.LimitReader(reader, int64(msg.ExtLen)))
 	if err != nil {
-		return nil, true, err
+		return nil, err
 	}
 	err = proto.Unmarshal(msg.RawExt, msg.PBExt)
 	if err != nil {
-		return nil, true, err
+		return nil, err
 	}
 
-	return msg, false, nil
+	return msg, nil
 }
 
 func parseSvrMsgHeader(header []byte) (*SvrMessage, error) {
@@ -104,7 +104,7 @@ func parseSvrMsgHeader(header []byte) (*SvrMessage, error) {
 	return msg, nil
 }
 
-func packSvrMsg(msg *SvrMessage) ([]byte, error) {
+func PackSvrMsg(msg *SvrMessage) ([]byte, error) {
 	pkg := bytes.NewBuffer([]byte{})
 	var err error
 

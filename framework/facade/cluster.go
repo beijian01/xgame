@@ -35,9 +35,10 @@ type (
 type (
 	ICluster interface {
 		Init()
-		PublishMsg(nodeType string, msg proto.Message) error                                            // 异步 RPC，仅通知，不需要回复
-		RequestWait(nodeType string, req proto.Message, timeout time.Duration) (proto.Message, error)   // 同步阻塞 RPC ,请求/回复
-		RequestAsync(nodeType string, req proto.Message, cbk func(resp proto.Message, err error)) error // 异步 RPC，请求/回复
-		Stop()                                                                                          // 停止
+		PublishMsg(nodeId string, msg proto.Message) error // 异步 RPC，仅通知，不需要回复
+		PublishBytes(nodeId string, data []byte) error
+		RequestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error)   // 同步阻塞 RPC ,请求/回复
+		RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error // 异步 RPC，请求/回复
+		Stop()                                                                                        // 停止
 	}
 )

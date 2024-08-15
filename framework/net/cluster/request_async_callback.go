@@ -39,7 +39,10 @@ func (p *rpcCallbackMgr) unregisterCallback(mid uint32) {
 func (p *rpcCallbackMgr) getCallback(mid uint32) rpcCallback {
 	p.Lock()
 	defer p.Unlock()
-	return p.handlers[mid]
+	return func(response proto.Message, err error) {
+		p.handlers[mid](response, err)
+		p.unregisterCallback(mid)
+	}
 }
 
 // todo 异步回调RPC handler

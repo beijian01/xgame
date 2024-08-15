@@ -1,7 +1,9 @@
 package cherryCluster
 
 import (
+	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/framework/net/parser"
+	"github.com/beijian01/xgame/pb"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 
@@ -10,6 +12,10 @@ import (
 
 	"github.com/nats-io/nats.go"
 )
+
+type ResponseWaitMgr struct {
+	pbChan map[uint32]chan proto.Message
+}
 
 type (
 	Cluster struct {
@@ -20,7 +26,9 @@ type (
 
 		natsConn *NatsConn
 
-		cliHandlers CliAgentHandlerMgr
+		msgHandlers   MessageHandlerMgr
+		asyncCallback rpcCallbackMgr
+		responseWait  ResponseWaitMgr
 	}
 )
 
@@ -67,24 +75,63 @@ func (p *Cluster) receive() {
 			)
 		}
 
-		// todo 将 natsMsg.RawMsg 解析成 parser.CliMessage
-		parserMsg := &parser.CliMessage{}
-		var pbMsg proto.Message // todo 将parser.Message的pb data 反序列化成 proto.CliMessage
-		switch parserMsg.MType {
-		case parser.CliMsgTypRequest:
-			// client->gate->server
-			// todo 在特定的worker中执行handler
-			p.cliHandlers.handlers[parserMsg.Route](parserMsg.Session, pbMsg)
-		case parser.CliMsgTypResponse:
-			/// sever-> gate ->client
-			agents := p.app.Find(parser.AgentManagerComponentName).(*parser.AgentManager)
-			agent, ok := agents.GetAgent(parserMsg.string)
-			if ok {
-				agent.Response(parserMsg)
-			}
-		case parser.CliMsgTypPush:
+		// 将 natsMsg.RawMsg 解析成 parser.SvrMessage
 
-		case parser.CliMsgTypNotify:
+		svrMsg, err := packet.ParseSvrMessage(natsMsg.Data)
+		if err != nil {
+			logrus.Errorf("[receive] ParseSvrMessage fail. [subject = %s, err = %v]", p.natsSub.subject, err)
+			return
+		}
+
+		switch svrMsg.PBExt.MsgType {
+		case pb.MsgType_CliMsgTypRequest, pb.MsgType_CliMsgTypNotify:
+			// client---->gate---->server
+			// 当前服务节点是server
+			// todo 在特定的worker中执行handler
+			// todo 封装session
+			p.msgHandlers.cliHandlers[svrMsg.Route](&pb.Session{
+				Sid:    svrMsg.PBExt.Sid,
+				Uid:    svrMsg.PBExt.Uid,
+				GateId: svrMsg.PBExt.SourceId,
+			}, svrMsg.PBMsg)
+		case pb.MsgType_CliMsgTypResponse, pb.MsgType_CliMsgTypPush:
+			/// sever-> gate ->client
+			// 当前节点是gate
+			agents := p.app.Find(parser.AgentManagerComponentName).(*parser.AgentManager)
+			agent, ok := agents.GetAgent(svrMsg.PBExt.Sid)
+			if ok {
+				agent.Response(svrMsg) // gate 发给 client
+			}
+		case pb.MsgType_SvrMsgTypPublish:
+
+			// todo 第一个参数改server
+			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.Session{
+				Sid:    svrMsg.PBExt.Sid,
+				Uid:    svrMsg.PBExt.Uid,
+				GateId: svrMsg.PBExt.SourceId,
+			}, svrMsg.PBMsg)
+
+		case pb.MsgType_SvrMsgTypRequestAsync:
+			// todo 第一个参数改server
+			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.Session{
+				Sid:    svrMsg.PBExt.Sid,
+				Uid:    svrMsg.PBExt.Uid,
+				GateId: svrMsg.PBExt.SourceId,
+			}, svrMsg.PBMsg)
+
+		case pb.MsgType_SvrMsgTypResponseAsync:
+			cbk := p.asyncCallback.getCallback(svrMsg.PBExt.Mid)
+			cbk(svrMsg.PBMsg, nil)
+		case pb.MsgType_SvrMsgTypRequestWait:
+			// todo 第一个参数改server
+			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.Session{
+				Sid:    svrMsg.PBExt.Sid,
+				Uid:    svrMsg.PBExt.Uid,
+				GateId: svrMsg.PBExt.SourceId,
+			}, svrMsg.PBMsg)
+
+		case pb.MsgType_SvrMsgTypResponseWait:
+			p.responseWait.pbChan[svrMsg.PBExt.Mid] <- svrMsg.PBMsg
 		}
 	}
 
@@ -111,4 +158,16 @@ func (p *Cluster) SendMsg(nodeId string, request proto.Message) error {
 	}
 
 	return p.natsConn.Publish(subject, bytes)
+}
+
+func (p *Cluster) PublishBytes(nodeId string, data []byte) error {
+	if !p.app.Running() {
+		return cerr.ClusterRPCClientIsStop
+	}
+	nodeType, err := p.app.Discovery().GetType(nodeId)
+	if err != nil {
+		return err
+	}
+	subject := getRemoteSubject(p.prefix, nodeType, "")
+	return p.natsConn.Publish(subject, data)
 }
