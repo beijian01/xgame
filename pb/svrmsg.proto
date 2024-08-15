@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "github.com/beijian01/xgame/pb";
+
+package svrmsg;
+
+import "def.proto";
+
+message AuthRequest{
+   string account = 1;
+}
+message AuthResponse{
+  def.ErrCode code = 1;
+}

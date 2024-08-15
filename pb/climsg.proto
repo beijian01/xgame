@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "github.com/beijian01/xgame/pb";
+
+package climsg;
+
+import "def.proto";
+
+message LoginRequest{
+  string account = 1;
+}
+message LoginResponse{
+  def.ErrCode code = 1;
+  uint64 uid = 2;
+}

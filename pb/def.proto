@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+option go_package = "github.com/beijian01/xgame/pb";
+
+package def;
+
+message None {
+}
+
+message Bool {
+  bool value = 1;
+}
+
+message Int32 {
+  int32 value = 1;
+}
+
+message Int64 {
+  int64 value = 1;
+}
+
+message Double {
+  double value = 1;
+}
+
+message String {
+  string value = 1;
+}
+
+message Int64Int32 {
+  int64 key = 1;
+  int32 value = 2;
+}
+
+message Int64Int64 {
+  int64 key = 1;
+  int64 value = 2;
+}
+
+message Int32Int32 {
+  int32 key = 1;
+  int32 value = 2;
+}
+
+message Int32Int64 {
+  int32 key = 1;
+  int64 value = 2;
+}
+
+message Int32List {
+  repeated int32 list = 1;
+}
+
+message Int64List {
+  repeated int64 list = 1;
+}
+
+message Int32Map {
+  map<int32, int32> value = 1;
+}
+
+message Int32Int64Map {
+  map<int32, int64> value = 1;
+}
+
+message StringKeyValue {
+  string key = 1;
+  string value = 2;
+}
+
+enum ErrCode{
+  OK = 0;
+  ErrSystem = 1; // 系统内部错误
+}
+
+message Session{
+  string sid = 1;
+  uint64 uid = 2;
+  string ip = 3;
+  string gate_id = 4;
+}
+enum MsgType{
+  MTInvalid = 0;
+
+  CliMsgTypRequest  = 1; // client->server 请求
+  CliMsgTypResponse = 2; // server->client 回复
+  CliMsgTypNotify   = 3; // client->server 通知
+  CliMsgTypPush     = 4; // server->client 推送
+
+  SvrMsgTypRequestWait   = 5; // server->server 同步阻塞RPC
+  SvrMsgTypResponseWait  = 6; // server->server SvrMsgTypRequestWait的回复消息
+  SvrMsgTypPublish       = 7; // server->server 通知
+  SvrMsgTypRequestAsync  = 8; // server->server 异步回调RPC
+  SvrMsgTypResponseAsync = 9; // server->server SvrMsgTypRequestAsync 的回复消息
+}
+// 服务间通信时的扩展数据
+message SvrExtend{
+  string sourceId = 1; // 消息发送方的服务ID
+  string targetId = 2; // 消息接收方的服务ID
+  uint32 mid = 3; // 消息唯一ID
+  string sid = 4; // 消息发送方的session
+  uint64 uid = 5; // 消息发送方的uid
+  MsgType msgType = 6; // 消息类型
+}
