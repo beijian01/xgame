@@ -35,7 +35,7 @@ func (p *MessageHandlerMgr) ListenRequest(cbk any) {
 	if v.Type().NumIn() != 2 {
 		logrus.Panic("ListenRequestSugar handler params num wrong")
 	}
-	var tempSender pb.SvrExtend
+	var tempSender pb.MsgCommon
 	if v.Type().In(0) != reflect.TypeOf(&tempSender) {
 		logrus.Panic("ListenRequestSugar handler num in 0 is not Requester")
 	}
@@ -43,7 +43,7 @@ func (p *MessageHandlerMgr) ListenRequest(cbk any) {
 	name := proto.MessageName(msg)
 	route := crc32.ChecksumIEEE([]byte(name))
 
-	p.svrHandlers[route] = func(ext *pb.SvrExtend, req proto.Message) {
+	p.svrHandlers[route] = func(ext *pb.MsgCommon, req proto.Message) {
 		v.Call([]reflect.Value{reflect.ValueOf(ext), reflect.ValueOf(req)})
 	}
 }
@@ -55,7 +55,7 @@ func (p *MessageHandlerMgr) ListenClientMsg(cbk cfacade.CliAgentHandler) {
 	if v.Type().NumIn() != 2 {
 		logrus.Panic("ListenRequestSugar handler params num wrong")
 	}
-	var tempSender pb.SvrExtend
+	var tempSender pb.MsgCommon
 	if v.Type().In(0) != reflect.TypeOf(&tempSender).Elem() {
 		logrus.Panic("ListenRequestSugar handler num in 0 is not Requester")
 	}

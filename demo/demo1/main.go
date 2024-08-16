@@ -64,13 +64,13 @@ func main() {
 		game1.SetDiscovery(discovery)
 
 		cluster.DoOnAfterInit = append(cluster.DoOnAfterInit, func() {
-			game1.Cluster().ListenRequest(func(ext *pb.SvrExtend, req *pb.GtGaReqAB) {
+			game1.Cluster().ListenRequest(func(ext *pb.MsgCommon, req *pb.GtGaReqAB) {
 				resp := &pb.GtGaRspAB{
 					A:   req.A,
 					B:   req.B,
 					Sum: req.A + req.B,
 				}
-				data, err := packet.PackSvrMsg(&packet.SvrMessage{PBMsg: resp, PBExt: &pb.SvrExtend{
+				data, err := packet.PackMessage(&packet.Message{Msg: resp, Common: &pb.MsgCommon{
 					SourceId: ext.TargetId,
 					TargetId: ext.SourceId,
 					Mid:      ext.Mid,

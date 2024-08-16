@@ -24,10 +24,10 @@ type (
 		session              *pb.Session // session
 		chDie                chan struct {
 		} // wait for close
-		chPending   chan *packet.SvrMessage // push message queue
-		chWrite     chan []byte             // push bytes queue
-		lastAt      int64                   // last heartbeat unix time stamp
-		onCloseFunc []OnCloseFunc           // on close agent
+		chPending   chan *packet.Message // push message queue
+		chWrite     chan []byte          // push bytes queue
+		lastAt      int64                // last heartbeat unix time stamp
+		onCloseFunc []OnCloseFunc        // on close agent
 
 		agentMgr *AgentManager
 	}
@@ -42,7 +42,7 @@ func NewAgent(app cfacade.IApplication, conn net.Conn, session *pb.Session) Agen
 		state:        AgentInit,
 		session:      session,
 		chDie:        make(chan struct{}),
-		chPending:    make(chan *packet.SvrMessage, writeBacklog),
+		chPending:    make(chan *packet.Message, writeBacklog),
 		chWrite:      make(chan []byte, writeBacklog),
 		lastAt:       0,
 		onCloseFunc:  nil,
@@ -209,9 +209,9 @@ func (a *Agent) processPacket(msg *packet.CliMessage) {
 	// 转发客户端消息至目标服务
 
 	// todo 减少序列化和反序列化
-	svrMsg := &packet.SvrMessage{
-		PBMsg: msg.PBMsg,
-		PBExt: &pb.SvrExtend{
+	svrMsg := &packet.Message{
+		Msg: msg.PBMsg,
+		Common: &pb.MsgCommon{
 			SourceId: a.GetNodeId(),
 			TargetId: a.agentMgr.pbRoute.route2nodeTyp[msg.Route],
 			Mid:      msg.MID,
@@ -220,7 +220,7 @@ func (a *Agent) processPacket(msg *packet.CliMessage) {
 			MsgType:  pb.MsgType_CliMsgTypRequest,
 		},
 	}
-	data, err := packet.PackSvrMsg(svrMsg)
+	data, err := packet.PackMessage(svrMsg)
 	if err != nil {
 		logrus.Errorf("pack svr msg error. [error = %s]", err)
 		return
@@ -241,10 +241,10 @@ func (a *Agent) RemoteAddr() string {
 	return ""
 }
 
-func (a *Agent) processPending(pending *packet.SvrMessage) {
+func (a *Agent) processPending(pending *packet.Message) {
 
 	// encode packet
-	pkg, err := packet.PackSvrMsg(pending)
+	pkg, err := packet.PackMessage(pending)
 	if err != nil {
 		logrus.Warn(err)
 		return
@@ -253,7 +253,7 @@ func (a *Agent) processPending(pending *packet.SvrMessage) {
 	a.SendRaw(pkg)
 }
 
-func (a *Agent) sendPending(message *packet.SvrMessage) {
+func (a *Agent) sendPending(message *packet.Message) {
 	if a.state == AgentClosed {
 		logrus.Warnf("[sid = %s,uid = %d] Session is closed. [message=%#v]",
 			a.SID(),
@@ -281,6 +281,6 @@ func (a *Agent) AddOnClose(fn OnCloseFunc) {
 	}
 }
 
-func (a *Agent) Response(msg *packet.SvrMessage) {
+func (a *Agent) Response(msg *packet.Message) {
 	a.sendPending(msg)
 }

@@ -42,6 +42,6 @@ type (
 		Stop()                                                                                        // 停止
 	}
 
-	CliAgentHandler func(ext *pb.SvrExtend, req proto.Message)
-	SvrAgentHandler func(ext *pb.SvrExtend, req proto.Message)
+	CliAgentHandler func(ext *pb.MsgCommon, req proto.Message)
+	SvrAgentHandler func(ext *pb.MsgCommon, req proto.Message)
 )
