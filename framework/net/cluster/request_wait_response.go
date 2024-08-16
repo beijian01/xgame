@@ -1,8 +1,10 @@
 package cherryCluster
 
 import (
+	"errors"
 	"google.golang.org/protobuf/proto"
 	"sync/atomic"
+	"time"
 )
 
 type ResponseWaitMgr struct {
@@ -16,10 +18,16 @@ func newResponseWaitMgr() *ResponseWaitMgr {
 	}
 }
 
-func (p *ResponseWaitMgr) WaitResponse(mid uint32) proto.Message {
+func (p *ResponseWaitMgr) WaitResponse(mid uint32, timeout time.Duration) (proto.Message, error) {
 	p.pbChan[mid] = make(chan proto.Message)
-	resp := <-p.pbChan[mid] // 阻塞等待
-	return resp
+
+	select {
+	case resp := <-p.pbChan[mid]:
+		return resp, nil
+	case <-time.After(timeout):
+		return nil, errors.New("waitResponse timeout")
+
+	}
 }
 func (p *ResponseWaitMgr) NextMid() uint32 {
 	p.mid.Add(1)

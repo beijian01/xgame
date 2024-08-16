@@ -76,7 +76,7 @@ func (p *Cluster) RequestWait(nodeId string, req proto.Message, timeout time.Dur
 	if err = p.SendBytes(nodeId, bytes); err != nil {
 		return nil, err
 	}
-	return p.responseWait.WaitResponse(ext.Mid), nil
+	return p.responseWait.WaitResponse(ext.Mid, timeout)
 }
 
 func (p *Cluster) RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error {
@@ -185,11 +185,7 @@ func (p *Cluster) receive() {
 			cbk(svrMsg.PBMsg, nil)
 		case pb.MsgType_SvrMsgTypRequestWait:
 			// todo 第一个参数改server
-			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.SvrExtend{
-				Sid:      svrMsg.PBExt.Sid,
-				Uid:      svrMsg.PBExt.Uid,
-				SourceId: svrMsg.PBExt.SourceId,
-			}, svrMsg.PBMsg)
+			p.msgHandlers.svrHandlers[svrMsg.Route](svrMsg.PBExt, svrMsg.PBMsg)
 
 		case pb.MsgType_SvrMsgTypResponseWait:
 			p.responseWait.pbChan[svrMsg.PBExt.Mid] <- svrMsg.PBMsg

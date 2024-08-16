@@ -62,6 +62,7 @@ func ParseSvrMessage(data []byte) (*SvrMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	msg.PBExt = &pb.SvrExtend{}
 	err = proto.Unmarshal(msg.RawExt, msg.PBExt)
 	if err != nil {
 		return nil, err
@@ -109,11 +110,11 @@ func PackSvrMsg(msg *SvrMessage) ([]byte, error) {
 	pkg := bytes.NewBuffer([]byte{})
 	var err error
 
-	if err = binary.Write(pkg, svrMsgEndian, msg.Route); err != nil {
+	if msg.Route, msg.RawMsg, err = OnMarshal(msg.PBMsg); err != nil {
 		return nil, err
 	}
 
-	if msg.RawMsg, err = proto.Marshal(msg.PBMsg); err != nil {
+	if err = binary.Write(pkg, svrMsgEndian, msg.Route); err != nil {
 		return nil, err
 	}
 

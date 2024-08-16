@@ -42,8 +42,9 @@ func (p *MessageHandlerMgr) ListenRequest(cbk any) {
 	msg := reflect.New(v.Type().In(1)).Elem().Interface().(proto.Message)
 	name := proto.MessageName(msg)
 	route := crc32.ChecksumIEEE([]byte(name))
-	p.svrHandlers[route] = func(ext *pb.SvrExtend, msg proto.Message) {
-		v.Call([]reflect.Value{reflect.ValueOf(ext), reflect.ValueOf(msg)})
+
+	p.svrHandlers[route] = func(ext *pb.SvrExtend, req proto.Message) {
+		v.Call([]reflect.Value{reflect.ValueOf(ext), reflect.ValueOf(req)})
 	}
 }
 

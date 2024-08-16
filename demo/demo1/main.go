@@ -24,13 +24,16 @@ func main() {
 		}, false)
 
 		go func() {
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Second * 2)
+			logrus.Info(gate1.Discovery().Map())
+			time.Sleep(time.Second * 2)
 			respPb, err := gate1.Cluster().RequestWait("game1", &pb.GtGaReqAB{
 				A: 1,
 				B: 3,
-			}, time.Second*10)
+			}, time.Second*5)
 			if err != nil {
-				panic(err)
+				logrus.Errorf("gate1 request err: %v", err)
+				return
 			}
 			logrus.Info(respPb.(*pb.GtGaRspAB))
 		}()
@@ -67,14 +70,29 @@ func main() {
 					B:   req.B,
 					Sum: req.A + req.B,
 				}
-				data, err := packet.PackSvrMsg(&packet.SvrMessage{PBMsg: resp, PBExt: ext})
+				data, err := packet.PackSvrMsg(&packet.SvrMessage{PBMsg: resp, PBExt: &pb.SvrExtend{
+					SourceId: ext.TargetId,
+					TargetId: ext.SourceId,
+					Mid:      ext.Mid,
+					Sid:      ext.Sid,
+					Uid:      ext.Uid,
+					MsgType:  pb.MsgType_SvrMsgTypResponseWait,
+				}})
 				if err != nil {
-					panic(err)
+					logrus.Error(err)
+					return
 				}
-				game1.Cluster().SendBytes(ext.SourceId, data)
+				err = game1.Cluster().SendBytes(ext.SourceId, data)
+				if err != nil {
+					logrus.Error(err)
+					return
+				}
 			})
 		})
-
+		go func() {
+			time.Sleep(time.Second * 2)
+			logrus.Info(game1.Discovery().GetMember("gate1"))
+		}()
 		game1.Startup()
 	}()
 	wg.Wait()
