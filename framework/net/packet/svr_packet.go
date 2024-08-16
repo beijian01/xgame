@@ -52,7 +52,8 @@ func ParseSvrMessage(data []byte) (*SvrMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = proto.Unmarshal(msg.RawMsg, msg.PBMsg)
+
+	msg.PBMsg, err = OnUnmarshal(msg.Route, msg.RawMsg)
 	if err != nil {
 		return nil, err
 	}
