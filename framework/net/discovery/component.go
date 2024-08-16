@@ -22,8 +22,7 @@ func (*Component) Name() string {
 }
 
 func (p *Component) Init() {
-
-	p.IDiscovery = discovery
+	p.IDiscovery = NewDiscoveryETCD()
 	p.IDiscovery.Load(p.App())
 }
 

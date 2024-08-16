@@ -102,3 +102,9 @@ message SvrExtend{
   uint64 uid = 5; // 消息发送方的uid
   MsgType msgType = 6; // 消息类型
 }
+
+message Member{
+  string nodeId = 1;
+  string nodeType = 2;
+  string address = 3;
+}

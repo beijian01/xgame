@@ -45,6 +45,8 @@ func (p *ETCD) Load(app cfacade.IApplication) {
 	p.ttl = 10
 
 	// todo etcd 配置加载
+	p.config.Endpoints = []string{"localhost:2379"}
+
 	p.init()
 	p.getLeaseId()
 	p.register()
@@ -130,8 +132,6 @@ func (p *ETCD) register() {
 	registerMember := &pb.Member{
 		NodeId:   p.app.GetNodeId(),
 		NodeType: p.app.GetNodeType(),
-		Address:  p.app.RpcAddress(),
-		Settings: make(map[string]string),
 	}
 
 	jsonString, err := jsoniter.MarshalToString(registerMember)
@@ -179,7 +179,7 @@ func (p *ETCD) watch() {
 }
 
 func (p *ETCD) addMember(data []byte) {
-	member := &cproto.Member{}
+	member := &pb.Member{}
 	err := jsoniter.Unmarshal(data, member)
 	if err != nil {
 		return

@@ -11,6 +11,8 @@ const (
 type Component struct {
 	cfacade.Component
 	cfacade.ICluster
+
+	DoOnAfterInit []func()
 }
 
 func New() *Component {
@@ -26,6 +28,11 @@ func (c *Component) Init() {
 	c.ICluster.Init()
 }
 
+func (c *Component) OnAfterInit() {
+	for _, fn := range c.DoOnAfterInit {
+		fn()
+	}
+}
 func (c *Component) OnStop() {
 	c.ICluster.Stop()
 }

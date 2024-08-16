@@ -12,3 +12,12 @@ message AuthRequest{
 message AuthResponse{
   def.ErrCode code = 1;
 }
+message GtGaReqAB{
+  int32 a = 1;
+  int32 b = 2;
+}
+message GtGaRspAB{
+  int32 a = 1;
+  int32 b = 2;
+  int32 sum =  3;
+}

@@ -97,10 +97,9 @@ func (n *DiscoveryDefault) GetMember(nodeId string) (cfacade.IMember, bool) {
 func (n *DiscoveryDefault) AddMember(member cfacade.IMember) {
 	_, loaded := n.memberMap.LoadOrStore(member.GetNodeId(), member)
 	if loaded {
-		logrus.Warnf("duplicate nodeId. [nodeType = %s], [nodeId = %s], [address = %s]",
+		logrus.Warnf("duplicate nodeId. [nodeType = %s], [nodeId = %s]",
 			member.GetNodeType(),
 			member.GetNodeId(),
-			member.GetAddress(),
 		)
 		return
 	}

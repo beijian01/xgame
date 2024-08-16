@@ -17,6 +17,9 @@ type (
 
 func NewNatsConn() *NatsConn {
 	conn := &NatsConn{}
+	if conn.address == "" {
+		conn.address = nats.DefaultURL
+	}
 	return conn
 }
 

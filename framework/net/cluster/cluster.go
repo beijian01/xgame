@@ -29,6 +29,10 @@ type (
 	}
 )
 
+func (p *Cluster) ListenRequest(cbk any) {
+	p.msgHandlers.ListenRequest(cbk)
+}
+
 func (p *Cluster) PublishMsg(nodeId string, msg proto.Message) error {
 	if !p.app.Running() {
 		return cerr.ClusterRPCClientIsStop
@@ -146,10 +150,10 @@ func (p *Cluster) receive() {
 			// 当前服务节点是server
 			// todo 在特定的worker中执行handler
 			// todo 封装session
-			p.msgHandlers.cliHandlers[svrMsg.Route](&pb.Session{
-				Sid:    svrMsg.PBExt.Sid,
-				Uid:    svrMsg.PBExt.Uid,
-				GateId: svrMsg.PBExt.SourceId,
+			p.msgHandlers.cliHandlers[svrMsg.Route](&pb.SvrExtend{
+				Sid:      svrMsg.PBExt.Sid,
+				Uid:      svrMsg.PBExt.Uid,
+				SourceId: svrMsg.PBExt.SourceId,
 			}, svrMsg.PBMsg)
 		case pb.MsgType_CliMsgTypResponse, pb.MsgType_CliMsgTypPush:
 			/// sever-> gate ->client
@@ -162,18 +166,18 @@ func (p *Cluster) receive() {
 		case pb.MsgType_SvrMsgTypPublish:
 
 			// todo 第一个参数改server
-			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.Session{
-				Sid:    svrMsg.PBExt.Sid,
-				Uid:    svrMsg.PBExt.Uid,
-				GateId: svrMsg.PBExt.SourceId,
+			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.SvrExtend{
+				Sid:      svrMsg.PBExt.Sid,
+				Uid:      svrMsg.PBExt.Uid,
+				SourceId: svrMsg.PBExt.SourceId,
 			}, svrMsg.PBMsg)
 
 		case pb.MsgType_SvrMsgTypRequestAsync:
 			// todo 第一个参数改server
-			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.Session{
-				Sid:    svrMsg.PBExt.Sid,
-				Uid:    svrMsg.PBExt.Uid,
-				GateId: svrMsg.PBExt.SourceId,
+			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.SvrExtend{
+				Sid:      svrMsg.PBExt.Sid,
+				Uid:      svrMsg.PBExt.Uid,
+				SourceId: svrMsg.PBExt.SourceId,
 			}, svrMsg.PBMsg)
 
 		case pb.MsgType_SvrMsgTypResponseAsync:
@@ -181,10 +185,10 @@ func (p *Cluster) receive() {
 			cbk(svrMsg.PBMsg, nil)
 		case pb.MsgType_SvrMsgTypRequestWait:
 			// todo 第一个参数改server
-			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.Session{
-				Sid:    svrMsg.PBExt.Sid,
-				Uid:    svrMsg.PBExt.Uid,
-				GateId: svrMsg.PBExt.SourceId,
+			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.SvrExtend{
+				Sid:      svrMsg.PBExt.Sid,
+				Uid:      svrMsg.PBExt.Uid,
+				SourceId: svrMsg.PBExt.SourceId,
 			}, svrMsg.PBMsg)
 
 		case pb.MsgType_SvrMsgTypResponseWait:
@@ -205,6 +209,6 @@ func (p *Cluster) SendBytes(nodeId string, data []byte) error {
 	if err != nil {
 		return err
 	}
-	subject := getRemoteSubject(p.prefix, nodeType, "")
+	subject := getRemoteSubject(p.prefix, nodeType, nodeId)
 	return p.natsConn.Publish(subject, data)
 }

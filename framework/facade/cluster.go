@@ -1,6 +1,7 @@
 package cherryFacade
 
 import (
+	"github.com/beijian01/xgame/pb"
 	"google.golang.org/protobuf/proto"
 	"time"
 )
@@ -25,8 +26,6 @@ type (
 	IMember interface {
 		GetNodeId() string
 		GetNodeType() string
-		GetAddress() string
-		GetSettings() map[string]string
 	}
 
 	MemberListener func(member IMember) // MemberListener 成员增、删监听函数
@@ -36,9 +35,13 @@ type (
 	ICluster interface {
 		Init()
 		SendBytes(nodeId string, data []byte) error
+		ListenRequest(cbk any)
 		PublishMsg(nodeId string, msg proto.Message) error                                            // 异步 RPC，仅通知，不需要回复
 		RequestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error)   // 同步阻塞 RPC ,请求/回复
 		RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error // 异步 RPC，请求/回复
 		Stop()                                                                                        // 停止
 	}
+
+	CliAgentHandler func(ext *pb.SvrExtend, req proto.Message)
+	SvrAgentHandler func(ext *pb.SvrExtend, req proto.Message)
 )
