@@ -10,54 +10,44 @@ import (
 )
 
 var (
-	msgMutex   sync.RWMutex
-	msgID2Typ  = make(map[uint32]protoreflect.MessageType)
-	msgType2ID = make(map[protoreflect.MessageType]uint32)
-	msgID2Name = make(map[uint32]protoreflect.FullName)
+	rwMutex sync.RWMutex
+	id2type = make(map[uint32]protoreflect.MessageType)
+	type2id = make(map[protoreflect.MessageType]uint32)
+	id2name = make(map[uint32]protoreflect.FullName)
 )
 
 func RegisterMessage(msg proto.Message) (uint32, error) {
+	if msg == nil {
+		return 0, fmt.Errorf("msg is nil")
+	}
 	msgName := proto.MessageName(msg)
 	msgType := msg.ProtoReflect().Type()
-	return RegisterMessageNameType(msgName, msgType)
-}
-
-func RegisterMessageNameType(msgName protoreflect.FullName, msgType protoreflect.MessageType) (uint32, error) {
 	id := crc32.ChecksumIEEE([]byte(msgName))
 
-	if msgType == nil {
-		return id, fmt.Errorf("register message, message name:%v, type:%v is nil", msgName, msgType)
-	}
+	rwMutex.Lock()
+	defer rwMutex.Unlock()
 
-	msgMutex.Lock()
-	defer msgMutex.Unlock()
-
-	if oldMsgTyp, exist := msgID2Typ[id]; exist {
+	if oldMsgTyp, exist := id2type[id]; exist {
 		if oldMsgTyp != msgType {
-			// 哈希冲突.
-			return id, fmt.Errorf("register message,hash error, message name:%v, type:%v, old message name:%v, type:%v", msgName, msgType, msgID2Name[id], oldMsgTyp)
+			panic(fmt.Sprintf("哈希冲突 %s %s", oldMsgTyp.Descriptor().FullName(), msgType.Descriptor().FullName()))
 		}
 		return id, nil
 	}
 
-	msgID2Typ[id] = msgType
-	msgType2ID[msgType] = id
-	msgID2Name[id] = msgName
+	id2type[id] = msgType
+	type2id[msgType] = id
+	id2name[id] = msgName
 
-	logrus.WithFields(logrus.Fields{
-		"msgid":   id,
-		"msgtype": msgType,
-		"msgName": msgName,
-	}).Debug("RegisterMessage")
+	logrus.Debugf("RegisterMessage %s %d", msgName, id)
 
 	return id, nil
 }
 
 func MessageType(id uint32) (protoreflect.MessageType, bool) {
-	msgMutex.RLock()
-	defer msgMutex.RUnlock()
+	rwMutex.RLock()
+	defer rwMutex.RUnlock()
 
-	if msgType, bHave := msgID2Typ[id]; bHave {
+	if msgType, exist := id2type[id]; exist {
 		return msgType, true
 	}
 
@@ -65,23 +55,23 @@ func MessageType(id uint32) (protoreflect.MessageType, bool) {
 }
 
 func MessageID(msgType protoreflect.MessageType) (uint32, bool) {
-	msgMutex.Lock()
-	defer msgMutex.Unlock()
+	rwMutex.Lock()
+	defer rwMutex.Unlock()
 
-	if msgID, bHave := msgType2ID[msgType]; bHave {
-		return msgID, true
+	if id, exist := type2id[msgType]; exist {
+		return id, true
 	}
 
 	return 0, false
 }
 
-func MessageName(id uint32) protoreflect.FullName {
-	msgMutex.Lock()
-	defer msgMutex.Unlock()
-	if name, bHave := msgID2Name[id]; bHave {
-		return name
+func MessageName(id uint32) (protoreflect.FullName, bool) {
+	rwMutex.Lock()
+	defer rwMutex.Unlock()
+	if name, exist := id2name[id]; exist {
+		return name, true
 	}
-	return protoreflect.FullName(fmt.Sprintf("msgid_%d not found", id))
+	return "", false
 }
 
 func OnUnmarshal(id uint32, data []byte) (proto.Message, error) {
@@ -106,5 +96,5 @@ func OnMarshal(msg proto.Message) (uint32, []byte, error) {
 		return msgID, data, err
 	}
 
-	return 0, nil, fmt.Errorf("OnMarshal, message %v auto register failed", msgType)
+	return 0, nil, fmt.Errorf("message %v register failed", msgType)
 }
