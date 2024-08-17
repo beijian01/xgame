@@ -35,13 +35,14 @@ type (
 	ICluster interface {
 		Init()
 		SendBytes(nodeId string, data []byte) error
-		ListenRequest(cbk any)
+		ListenMessage(cbk any)
 		PublishMsg(nodeId string, msg proto.Message) error                                            // 异步 RPC，仅通知，不需要回复
 		RequestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error)   // 同步阻塞 RPC ,请求/回复
 		RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error // 异步 RPC，请求/回复
 		Stop()                                                                                        // 停止
 	}
 
-	CliAgentHandler func(ext *pb.MsgCommon, req proto.Message)
-	SvrAgentHandler func(ext *pb.MsgCommon, req proto.Message)
+	CliAgentHandler  func(ext *pb.MsgCommon, req proto.Message)
+	ReqMsgHandler    func(ext *pb.MsgCommon, req proto.Message)
+	NotifyMsgHandler func(ext *pb.MsgCommon, req proto.Message)
 )

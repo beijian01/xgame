@@ -1,6 +1,7 @@
 package cherryCluster
 
 import (
+	"bytes"
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/framework/net/parser"
 	"github.com/beijian01/xgame/pb"
@@ -29,8 +30,8 @@ type (
 	}
 )
 
-func (p *Cluster) ListenRequest(cbk any) {
-	p.msgHandlers.ListenRequest(cbk)
+func (p *Cluster) ListenMessage(cbk any) {
+	p.msgHandlers.ListenMsg(cbk)
 }
 
 func (p *Cluster) PublishMsg(nodeId string, msg proto.Message) error {
@@ -44,39 +45,34 @@ func (p *Cluster) PublishMsg(nodeId string, msg proto.Message) error {
 	}
 	subject := getRemoteSubject(p.prefix, nodeType, nodeId)
 
-	bytes, err := packet.PackMessage(&packet.Message{
-		Msg: msg,
-		Common: &pb.MsgCommon{
-			SourceId: p.app.GetNodeId(),
-			TargetId: nodeId,
-			MsgType:  pb.MsgType_SvrMsgTypPublish,
-		},
-	})
+	common := &pb.MsgCommon{
+		SourceId: p.app.GetNodeId(),
+		TargetId: nodeId,
+		MsgType:  pb.MsgType_SvrMsgTypPublish,
+	}
+	data, err := packet.PackMessage(common, msg)
 	if err != nil {
 		return err
 	}
 
-	return p.natsConn.Publish(subject, bytes)
+	return p.natsConn.Publish(subject, data)
 }
 
 func (p *Cluster) RequestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error) {
-	ext := &pb.MsgCommon{
+	common := &pb.MsgCommon{
 		SourceId: p.app.GetNodeId(),
 		TargetId: nodeId,
 		MsgType:  pb.MsgType_SvrMsgTypRequestWait,
 		Mid:      p.responseWait.NextMid(),
 	}
-	bytes, err := packet.PackMessage(&packet.Message{
-		Msg:    req,
-		Common: ext,
-	})
+	data, err := packet.PackMessage(common, req)
 	if err != nil {
 		return nil, err
 	}
-	if err = p.SendBytes(nodeId, bytes); err != nil {
+	if err = p.SendBytes(nodeId, data); err != nil {
 		return nil, err
 	}
-	return p.responseWait.WaitResponse(ext.Mid, timeout)
+	return p.responseWait.WaitResponse(common.Mid, timeout)
 }
 
 func (p *Cluster) RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error {
@@ -137,58 +133,45 @@ func (p *Cluster) receive() {
 		}
 
 		// 将 natsMsg.RawMsg 解析成 parser.Message
-
-		svrMsg, err := packet.ReadMessage(natsMsg.Data)
+		reader := bytes.NewReader(natsMsg.Data)
+		common, msg, err := packet.ReadMessage(reader)
 		if err != nil {
 			logrus.Errorf("[receive] ReadMessage fail. [subject = %s, err = %v]", p.natsSub.subject, err)
 			return
 		}
 
-		switch svrMsg.Common.MsgType {
+		switch common.MsgType {
 		case pb.MsgType_CliMsgTypRequest, pb.MsgType_CliMsgTypNotify:
 			// client---->gate---->server
 			// 当前服务节点是server
 			// todo 在特定的worker中执行handler
-			// todo 封装session
-			p.msgHandlers.cliHandlers[svrMsg.Route](&pb.MsgCommon{
-				Sid:      svrMsg.Common.Sid,
-				Uid:      svrMsg.Common.Uid,
-				SourceId: svrMsg.Common.SourceId,
-			}, svrMsg.Msg)
+			p.msgHandlers.reqHandlers[common.Route](common, msg)
 		case pb.MsgType_CliMsgTypResponse, pb.MsgType_CliMsgTypPush:
 			/// sever-> gate ->client
 			// 当前节点是gate
 			agents := p.app.Find(parser.AgentManagerComponentName).(*parser.AgentManager)
-			agent, ok := agents.GetAgent(svrMsg.Common.Sid)
+			agent, ok := agents.GetAgent(common.Sid)
 			if ok {
-				agent.Response(svrMsg) // gate 发给 client
+				agent.Response(common) // gate 发给 client
 			}
 		case pb.MsgType_SvrMsgTypPublish:
-
-			// todo 第一个参数改server
-			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.MsgCommon{
-				Sid:      svrMsg.Common.Sid,
-				Uid:      svrMsg.Common.Uid,
-				SourceId: svrMsg.Common.SourceId,
-			}, svrMsg.Msg)
+			p.msgHandlers.reqHandlers[common.Route](common, msg)
 
 		case pb.MsgType_SvrMsgTypRequestAsync:
-			// todo 第一个参数改server
-			p.msgHandlers.svrHandlers[svrMsg.Route](&pb.MsgCommon{
-				Sid:      svrMsg.Common.Sid,
-				Uid:      svrMsg.Common.Uid,
-				SourceId: svrMsg.Common.SourceId,
-			}, svrMsg.Msg)
+			p.msgHandlers.reqHandlers[common.Route](common, msg)
 
 		case pb.MsgType_SvrMsgTypResponseAsync:
-			cbk := p.asyncCallback.getCallback(svrMsg.Common.Mid)
-			cbk(svrMsg.Msg, nil)
+			cbk := p.asyncCallback.getCallback(common.Mid)
+			cbk(msg, nil)
 		case pb.MsgType_SvrMsgTypRequestWait:
-			// todo 第一个参数改server
-			p.msgHandlers.svrHandlers[svrMsg.Route](svrMsg.Common, svrMsg.Msg)
-
+			handler, exist := p.msgHandlers.reqHandlers[common.Route]
+			if !exist {
+				logrus.Errorf("[receive] RequestWait fail. [subject = %s, err = %v]", p.natsSub.subject, err)
+				return
+			}
+			handler(common, msg)
 		case pb.MsgType_SvrMsgTypResponseWait:
-			p.responseWait.pbChan[svrMsg.Common.Mid] <- svrMsg.Msg
+			p.responseWait.pbChan[common.Mid] <- msg
 		}
 	}
 

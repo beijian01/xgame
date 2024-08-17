@@ -24,9 +24,9 @@ func main() {
 		}, false)
 
 		go func() {
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Second)
 			logrus.Info(gate1.Discovery().Map())
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Second)
 			respPb, err := gate1.Cluster().RequestWait("game1", &pb.GtGaReqAB{
 				A: 1,
 				B: 3,
@@ -64,19 +64,28 @@ func main() {
 		game1.SetDiscovery(discovery)
 
 		cluster.DoOnAfterInit = append(cluster.DoOnAfterInit, func() {
-			game1.Cluster().ListenRequest(func(common *pb.MsgCommon, req *pb.GtGaReqAB) {
+			game1.Cluster().ListenMessage(func(remote *pb.MsgCommon, req *pb.GtGaReqAB) {
 				resp := &pb.GtGaRspAB{
 					A:   req.A,
 					B:   req.B,
 					Sum: req.A + req.B,
 				}
+				local := &pb.MsgCommon{
+					Mid:      remote.Mid,
+					MsgType:  pb.MsgType_SvrMsgTypResponseWait,
+					Route:    remote.Route,
+					Sid:      remote.Sid,
+					SourceId: remote.TargetId,
+					TargetId: remote.SourceId,
+					Uid:      remote.Uid,
+				}
 
-				data, err := packet.PackMessage(common, resp)
+				data, err := packet.PackMessage(local, resp)
 				if err != nil {
 					logrus.Error(err)
 					return
 				}
-				err = game1.Cluster().SendBytes(common.SourceId, data)
+				err = game1.Cluster().SendBytes(local.TargetId, data)
 				if err != nil {
 					logrus.Error(err)
 					return
@@ -84,7 +93,7 @@ func main() {
 			})
 		})
 		go func() {
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Second)
 			logrus.Info(game1.Discovery().GetMember("gate1"))
 		}()
 		game1.Startup()

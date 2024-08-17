@@ -1,7 +1,10 @@
 package cherryCluster
 
 import (
+	"github.com/beijian01/xgame/framework/net/packet"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
+	"reflect"
 	"sync"
 )
 
@@ -26,8 +29,17 @@ func (p *rpcCallbackMgr) registerCallback(h rpcCallback) {
 	if h == nil {
 		return
 	}
+	v := reflect.ValueOf(h)
+	msg := reflect.New(v.Type().In(1)).Elem().Interface().(proto.Message)
+
+	_, err := packet.RegisterMessage(msg)
+	if err != nil {
+		logrus.Panic(err)
+	}
+
 	p.Lock()
 	defer p.Unlock()
+
 	p.mid++
 	p.handlers[p.mid] = h
 }
@@ -44,7 +56,3 @@ func (p *rpcCallbackMgr) getCallback(mid uint32) rpcCallback {
 		p.unregisterCallback(mid)
 	}
 }
-
-// todo 异步回调RPC handler
-// todo 消息类型区分
-// 1 publish  2 requestWait  3 requestAsync  4 responseWait  5 responseAsync
