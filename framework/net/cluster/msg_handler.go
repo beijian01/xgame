@@ -1,9 +1,9 @@
 package cherryCluster
 
 import (
+	"fmt"
 	cfacade "github.com/beijian01/xgame/framework/facade"
 	"github.com/beijian01/xgame/framework/net/packet"
-	"github.com/beijian01/xgame/pb"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"reflect"
@@ -12,12 +12,15 @@ import (
 type (
 	MessageHandlerMgr struct {
 		reqHandlers map[uint32]cfacade.ReqMsgHandler // key=消息名的哈希值。请求消息对应的handler都是明确固定的，在启动时注册（map写操作），运行时只有读操作，所以不用加锁
+
+		requester *requester
 	}
 )
 
-func NewMessageHandlerMgr() *MessageHandlerMgr {
+func NewMessageHandlerMgr(app cfacade.IApplication) *MessageHandlerMgr {
 	return &MessageHandlerMgr{
 		reqHandlers: make(map[uint32]cfacade.ReqMsgHandler),
+		requester:   newRpcHandlerMgr(app),
 	}
 }
 
@@ -25,15 +28,14 @@ func (p *MessageHandlerMgr) ListenMsg(cbk any) {
 	v := reflect.ValueOf(cbk)
 
 	if v.Kind() != reflect.Func {
-		logrus.Panic("cbk is not func")
+		panic("cbk is not func")
 	}
 	if v.Type().NumIn() != 2 {
-		logrus.Panic("cbk num in is not 2")
+		panic("cbk num in is not 2")
 	}
 
-	var common pb.MsgCommon
-	if v.Type().In(0) != reflect.TypeOf(&common) {
-		logrus.Panic("handler num in 0 is not MsgCommon")
+	if !v.Type().In(0).Implements(reflect.TypeOf((*cfacade.ISender)(nil)).Elem()) {
+		panic(fmt.Errorf("cbk param 0 is not ISender %v %v ", v.Type().In(0), reflect.TypeOf((*cfacade.ISender)(nil)).Elem()))
 	}
 	msg := reflect.New(v.Type().In(1)).Elem().Interface().(proto.Message)
 
@@ -42,7 +44,19 @@ func (p *MessageHandlerMgr) ListenMsg(cbk any) {
 		logrus.Panic(err)
 	}
 
-	p.reqHandlers[id] = func(ext *pb.MsgCommon, req proto.Message) {
-		v.Call([]reflect.Value{reflect.ValueOf(ext), reflect.ValueOf(req)})
+	p.reqHandlers[id] = func(sender cfacade.ISender, req proto.Message) {
+		v.Call([]reflect.Value{reflect.ValueOf(sender), reflect.ValueOf(req)})
+	}
+}
+
+func (p *MessageHandlerMgr) RegisterResponse(resp proto.Message) {
+	id, err := packet.RegisterMessage(resp)
+	if err != nil {
+		logrus.Panic(err)
+	}
+
+	p.reqHandlers[id] = func(sender cfacade.ISender, msg proto.Message) {
+		cbk := p.requester.getCallback(sender.GetMid())
+		cbk(msg, nil)
 	}
 }

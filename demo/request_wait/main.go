@@ -2,9 +2,9 @@ package main
 
 import (
 	cherry "github.com/beijian01/xgame/framework"
+	cherryFacade "github.com/beijian01/xgame/framework/facade"
 	cherryCluster "github.com/beijian01/xgame/framework/net/cluster"
 	cherryDiscovery "github.com/beijian01/xgame/framework/net/discovery"
-	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/framework/net/profile"
 	"github.com/beijian01/xgame/pb"
 	"github.com/sirupsen/logrus"
@@ -25,9 +25,10 @@ func main() {
 
 		go func() {
 			time.Sleep(time.Second)
+			gate1.Cluster().RegisterResponse((*pb.GtGaRspAB)(nil))
 			logrus.Info(gate1.Discovery().Map())
 			time.Sleep(time.Second)
-			respPb, err := gate1.Cluster().RequestWait("game1", &pb.GtGaReqAB{
+			respPb, err := gate1.Cluster().RequestWait("game", &pb.GtGaReqAB{
 				A: 1,
 				B: 3,
 			}, time.Second*5)
@@ -64,32 +65,13 @@ func main() {
 		game1.SetDiscovery(discovery)
 
 		cluster.DoOnAfterInit = append(cluster.DoOnAfterInit, func() {
-			game1.Cluster().ListenMessage(func(remote *pb.MsgCommon, req *pb.GtGaReqAB) {
+			game1.Cluster().ListenMessage(func(sender cherryFacade.ISender, req *pb.GtGaReqAB) {
 				resp := &pb.GtGaRspAB{
 					A:   req.A,
 					B:   req.B,
 					Sum: req.A + req.B,
 				}
-				local := &pb.MsgCommon{
-					Mid:      remote.Mid,
-					MsgType:  pb.MsgType_SvrMsgTypResponseWait,
-					Route:    remote.Route,
-					Sid:      remote.Sid,
-					SourceId: remote.TargetId,
-					TargetId: remote.SourceId,
-					Uid:      remote.Uid,
-				}
-
-				data, err := packet.PackMessage(local, resp)
-				if err != nil {
-					logrus.Error(err)
-					return
-				}
-				err = game1.Cluster().SendBytes(local.TargetId, data)
-				if err != nil {
-					logrus.Error(err)
-					return
-				}
+				sender.Resp(resp)
 			})
 		})
 		go func() {

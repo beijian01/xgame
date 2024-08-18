@@ -3,7 +3,6 @@ package cherryCluster
 import (
 	"bytes"
 	"github.com/beijian01/xgame/framework/net/packet"
-	"github.com/beijian01/xgame/framework/net/parser"
 	"github.com/beijian01/xgame/pb"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
@@ -24,14 +23,15 @@ type (
 
 		natsConn *NatsConn
 
-		msgHandlers   *MessageHandlerMgr
-		asyncCallback *rpcCallbackMgr
-		responseWait  *ResponseWaitMgr
+		msgHandlers *MessageHandlerMgr
 	}
 )
 
 func (p *Cluster) ListenMessage(cbk any) {
 	p.msgHandlers.ListenMsg(cbk)
+}
+func (p *Cluster) RegisterResponse(resp proto.Message) {
+	p.msgHandlers.RegisterResponse(resp)
 }
 
 func (p *Cluster) PublishMsg(nodeId string, msg proto.Message) error {
@@ -58,27 +58,12 @@ func (p *Cluster) PublishMsg(nodeId string, msg proto.Message) error {
 	return p.natsConn.Publish(subject, data)
 }
 
-func (p *Cluster) RequestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error) {
-	common := &pb.MsgCommon{
-		SourceId: p.app.GetNodeId(),
-		TargetId: nodeId,
-		MsgType:  pb.MsgType_SvrMsgTypRequestWait,
-		Mid:      p.responseWait.NextMid(),
-	}
-	data, err := packet.PackMessage(common, req)
-	if err != nil {
-		return nil, err
-	}
-	if err = p.SendBytes(nodeId, data); err != nil {
-		return nil, err
-	}
-	return p.responseWait.WaitResponse(common.Mid, timeout)
+func (p *Cluster) RequestWait(nodeType string, req proto.Message, timeout time.Duration) (proto.Message, error) {
+	return p.msgHandlers.requester.requestWait(nodeType, req, timeout)
 }
 
-func (p *Cluster) RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error {
-	//TODO implement me
-	panic("implement me")
-	return nil
+func (p *Cluster) RequestAsync(nodeType string, req proto.Message, cbk func(resp proto.Message, err error)) error {
+	return p.msgHandlers.requester.requestAsync(nodeType, req, cbk)
 }
 
 func NewCluster(app cfacade.IApplication) cfacade.ICluster {
@@ -88,9 +73,7 @@ func NewCluster(app cfacade.IApplication) cfacade.ICluster {
 		prefix:     "node",
 		//natsSub:       newNatsSubject(getRemoteSubject()),
 		//natsConn:      nil,
-		msgHandlers:   NewMessageHandlerMgr(),
-		asyncCallback: newRpcHandlerMgr(),
-		responseWait:  newResponseWaitMgr(),
+		msgHandlers: NewMessageHandlerMgr(app),
 	}
 	cluster.natsConn = NewNatsConn()
 	cluster.natsSub = newNatsSubject(getRemoteSubject(cluster.prefix, app.GetNodeType(), app.GetNodeId()), cluster.bufferSize)
@@ -139,40 +122,16 @@ func (p *Cluster) receive() {
 			logrus.Errorf("[receive] ReadMessage fail. [subject = %s, err = %v]", p.natsSub.subject, err)
 			return
 		}
-
-		switch common.MsgType {
-		case pb.MsgType_CliMsgTypRequest, pb.MsgType_CliMsgTypNotify:
-			// client---->gate---->server
-			// 当前服务节点是server
-			// todo 在特定的worker中执行handler
-			p.msgHandlers.reqHandlers[common.Route](common, msg)
-		case pb.MsgType_CliMsgTypResponse, pb.MsgType_CliMsgTypPush:
-			/// sever-> gate ->client
-			// 当前节点是gate
-			agents := p.app.Find(parser.AgentManagerComponentName).(*parser.AgentManager)
-			agent, ok := agents.GetAgent(common.Sid)
-			if ok {
-				agent.Response(common) // gate 发给 client
-			}
-		case pb.MsgType_SvrMsgTypPublish:
-			p.msgHandlers.reqHandlers[common.Route](common, msg)
-
-		case pb.MsgType_SvrMsgTypRequestAsync:
-			p.msgHandlers.reqHandlers[common.Route](common, msg)
-
-		case pb.MsgType_SvrMsgTypResponseAsync:
-			cbk := p.asyncCallback.getCallback(common.Mid)
-			cbk(msg, nil)
-		case pb.MsgType_SvrMsgTypRequestWait:
-			handler, exist := p.msgHandlers.reqHandlers[common.Route]
-			if !exist {
-				logrus.Errorf("[receive] RequestWait fail. [subject = %s, err = %v]", p.natsSub.subject, err)
-				return
-			}
-			handler(common, msg)
-		case pb.MsgType_SvrMsgTypResponseWait:
-			p.responseWait.pbChan[common.Mid] <- msg
+		sender := &Sender{
+			MsgCommon: common,
+			app:       p.app,
 		}
+		handler, exist := p.msgHandlers.reqHandlers[common.Route]
+		if !exist {
+			logrus.Errorf("[receive] handler 未注册, route=%d ", common.Route)
+			return
+		}
+		handler(sender, msg)
 	}
 
 	for msg := range p.natsSub.ch {
