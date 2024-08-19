@@ -5,7 +5,7 @@ import (
 	cherry "github.com/beijian01/xgame/framework/facade"
 	cherryCluster "github.com/beijian01/xgame/framework/net/cluster"
 	cherryDiscovery "github.com/beijian01/xgame/framework/net/discovery"
-	"github.com/beijian01/xgame/framework/net/profile"
+	"github.com/beijian01/xgame/framework/profile"
 	"github.com/beijian01/xgame/pb"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"

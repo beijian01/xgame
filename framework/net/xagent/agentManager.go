@@ -125,7 +125,7 @@ func (a *Agents) Count() int {
 }
 
 func (a *Agents) Init() {
-	a.App().Cluster().SetDefaultHandler(func(ext facade.ISender, msg proto.Message) {
+	a.App().Cluster().SetDefaultHandler(func(ext *facade.Sender, msg proto.Message) {
 		agent, exist := a.GetAgent(ext.GetCommon().GetSid())
 		if !exist {
 			logrus.Errorf("[sid = %s] not exist.", ext.GetCommon().GetSid())

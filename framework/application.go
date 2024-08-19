@@ -5,8 +5,8 @@ import (
 	"github.com/beijian01/xgame/framework/facade"
 	xcluster "github.com/beijian01/xgame/framework/net/cluster"
 	xdiscovery "github.com/beijian01/xgame/framework/net/discovery"
-	"github.com/beijian01/xgame/framework/net/profile"
 	"github.com/beijian01/xgame/framework/net/xagent"
+	"github.com/beijian01/xgame/framework/profile"
 	"github.com/beijian01/xgame/framework/util"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -44,6 +44,7 @@ func NewAppNode(conf *profile.ClusterCfg, nodeId string) (*Application, error) {
 		INode:      nodeCfg,
 		isFrontend: nodeCfg.IsGate,
 		dieChan:    make(chan bool),
+		conf:       conf,
 	}
 
 	cluster := xcluster.New(app)

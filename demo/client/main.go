@@ -5,6 +5,7 @@ import (
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/pb"
 	"github.com/sirupsen/logrus"
+	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -12,7 +13,7 @@ import (
 
 func main() {
 	// 服务器的地址，格式为 "ip:port"
-	serverAddr := "127.0.0.1:1234"
+	serverAddr := "127.0.0.1:20202"
 	// 连接到服务器
 	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
@@ -20,7 +21,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer conn.Close() // 函数退出前关闭连接
-	packet.RegisterMessage(&pb.LoginResponse{})
+	packet.RegisterMessage(&pb.SRespLogin{})
 	go func() {
 		for {
 			common, msg, err := packet.ReadMessage(conn)
@@ -38,7 +39,7 @@ func main() {
 		// 构建要发送的消息
 		data, err := packet.PackMessage(&pb.MsgCommon{
 			Mid: mid,
-		}, &pb.LoginRequest{Account: "啊？"})
+		}, &pb.CReqLogin{Account: fmt.Sprintf("布什*戈门 %d", rand.Int())})
 		if err != nil {
 			logrus.Error(err)
 			return

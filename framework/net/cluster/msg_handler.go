@@ -22,7 +22,7 @@ func NewMessageHandlerMgr(app facade.IApplication) *MessageHandlerMgr {
 	return &MessageHandlerMgr{
 		reqHandlers: make(map[uint32]facade.ReqMsgHandler),
 		requester:   newRpcHandlerMgr(app),
-		defaultHandler: func(ext facade.ISender, req proto.Message) {
+		defaultHandler: func(ext *facade.Sender, req proto.Message) {
 			logrus.Error("defaultHandler 消息未注册", req)
 		},
 	}
@@ -38,8 +38,8 @@ func (p *MessageHandlerMgr) ListenMsg(cbk any) {
 		panic("cbk num in is not 2")
 	}
 
-	if !v.Type().In(0).Implements(reflect.TypeOf((*facade.ISender)(nil)).Elem()) {
-		panic(fmt.Errorf("cbk param 0 is not ISender %v %v ", v.Type().In(0), reflect.TypeOf((*facade.ISender)(nil)).Elem()))
+	if v.Type().In(0) != reflect.TypeOf((*facade.Sender)(nil)) {
+		panic(fmt.Sprint("cbk in 0 is not Sender", v.Type().In(0), reflect.TypeOf((*facade.Sender)(nil))))
 	}
 	msg := reflect.New(v.Type().In(1)).Elem().Interface().(proto.Message)
 
@@ -48,7 +48,7 @@ func (p *MessageHandlerMgr) ListenMsg(cbk any) {
 		logrus.Panic(err)
 	}
 
-	p.reqHandlers[id] = func(sender facade.ISender, req proto.Message) {
+	p.reqHandlers[id] = func(sender *facade.Sender, req proto.Message) {
 		v.Call([]reflect.Value{reflect.ValueOf(sender), reflect.ValueOf(req)})
 	}
 }
@@ -59,7 +59,7 @@ func (p *MessageHandlerMgr) RegisterResponse(resp proto.Message) {
 		logrus.Panic(err)
 	}
 
-	p.reqHandlers[id] = func(sender facade.ISender, msg proto.Message) {
+	p.reqHandlers[id] = func(sender *facade.Sender, msg proto.Message) {
 		cbk := p.requester.getCallback(sender.GetCommon().Mid)
 		cbk(msg, nil)
 	}

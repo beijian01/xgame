@@ -1,6 +1,6 @@
 package facade
 
-import "github.com/beijian01/xgame/framework/net/profile"
+import "github.com/beijian01/xgame/framework/profile"
 
 type (
 	// INode 节点信息

@@ -1,7 +1,7 @@
 package xcluster
 
 import (
-	"github.com/beijian01/xgame/framework/net/profile"
+	"github.com/beijian01/xgame/framework/profile"
 	"github.com/sirupsen/logrus"
 	"time"
 

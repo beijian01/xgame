@@ -122,9 +122,9 @@ func (p *Cluster) receive() {
 			logrus.Errorf("[receive] ReadMessage fail. [subject = %s, err = %v]", p.natsSub.subject, err)
 			return
 		}
-		sender := &Sender{
+		sender := &facade.Sender{
 			MsgCommon: common,
-			app:       p.app,
+			App:       p.app,
 		}
 		if handler, exist := p.msgHandlers.reqHandlers[common.Route]; exist {
 			handler(sender, msg)

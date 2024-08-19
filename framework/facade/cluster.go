@@ -1,7 +1,9 @@
 package facade
 
 import (
+	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/pb"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"time"
 )
@@ -44,12 +46,39 @@ type (
 		SetDefaultHandler(handler ReqMsgHandler)
 	}
 
-	ISender interface {
-		GetCommon() *pb.MsgCommon
-		Resp(message proto.Message)
+	ReqMsgHandler func(ext *Sender, req proto.Message)
+)
+
+type Sender struct {
+	*pb.MsgCommon
+
+	App IApplication
+}
+
+func (s *Sender) Resp(msg proto.Message) {
+	//s
+	local := &pb.MsgCommon{
+		Mid:      s.Mid,
+		MsgType:  pb.MsgType_SvrMsgTypResponseWait,
+		Route:    s.Route,
+		Sid:      s.Sid,
+		SourceId: s.TargetId,
+		TargetId: s.SourceId,
+		Uid:      s.Uid,
 	}
 
-	CliAgentHandler  func(ext *pb.MsgCommon, req proto.Message)
-	ReqMsgHandler    func(ext ISender, req proto.Message)
-	NotifyMsgHandler func(ext *pb.MsgCommon, req proto.Message)
-)
+	data, err := packet.PackMessage(local, msg)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	err = s.App.Cluster().SendBytes(local.TargetId, data)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+}
+
+func (s *Sender) GetCommon() *pb.MsgCommon {
+	return s.MsgCommon
+}

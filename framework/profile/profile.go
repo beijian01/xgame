@@ -1,7 +1,9 @@
 package profile
 
 import (
+	"encoding/json"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"os"
 )
 
 const (
@@ -53,4 +55,17 @@ type NatsCfg struct {
 	User           string `json:"user,omitempty"`
 	Password       string `json:"password,omitempty"`
 	ReconnectDelay int    `json:"reconnect_delay,omitempty"`
+}
+
+func ParseProfile(path string) (*ClusterCfg, error) {
+	fileData, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	cfg := &ClusterCfg{}
+	err = json.Unmarshal(fileData, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
