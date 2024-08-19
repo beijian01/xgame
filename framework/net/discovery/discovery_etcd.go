@@ -1,4 +1,4 @@
-package cherryDiscovery
+package xdiscovery
 
 import (
 	"context"

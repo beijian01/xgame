@@ -1,4 +1,4 @@
-package cherryFacade
+package facade
 
 import (
 	"github.com/beijian01/xgame/pb"

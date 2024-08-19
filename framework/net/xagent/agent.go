@@ -1,4 +1,4 @@
-package agent
+package xagent
 
 import (
 	cfacade "github.com/beijian01/xgame/framework/facade"

@@ -1,4 +1,4 @@
-package cherry
+package xgame
 
 import (
 	cfacade "github.com/beijian01/xgame/framework/facade"

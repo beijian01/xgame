@@ -1,4 +1,4 @@
-package cherryFacade
+package facade
 
 import "net"
 

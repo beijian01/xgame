@@ -1,4 +1,4 @@
-package cherryConnector
+package xconnector
 
 import (
 	"fmt"

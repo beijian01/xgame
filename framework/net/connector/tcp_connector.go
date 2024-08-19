@@ -1,4 +1,4 @@
-package cherryConnector
+package xconnector
 
 import (
 	cfacade "github.com/beijian01/xgame/framework/facade"

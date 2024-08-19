@@ -1,4 +1,4 @@
-package cherryDiscovery
+package xdiscovery
 
 import (
 	cfacade "github.com/beijian01/xgame/framework/facade"

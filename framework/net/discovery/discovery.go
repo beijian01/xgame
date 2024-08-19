@@ -1,4 +1,4 @@
-package cherryDiscovery
+package xdiscovery
 
 import (
 	"github.com/beijian01/xgame/framework/util"

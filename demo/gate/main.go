@@ -4,7 +4,6 @@ import (
 	"fmt"
 	cherry "github.com/beijian01/xgame/framework"
 	cfacade "github.com/beijian01/xgame/framework/facade"
-	"github.com/beijian01/xgame/framework/net/agent"
 	cherryCluster "github.com/beijian01/xgame/framework/net/cluster"
 	cherryConnector "github.com/beijian01/xgame/framework/net/connector"
 	cherryDiscovery "github.com/beijian01/xgame/framework/net/discovery"
@@ -34,17 +33,17 @@ func main() {
 		gate1.Register(discovery)
 		gate1.SetDiscovery(discovery)
 
-		agentsManager := agent.NewAgents()
+		agentsManager := xagent.NewAgents()
 		gate1.Register(agentsManager)
 
 		tcpConn := cherryConnector.NewTCP(":1234")
 		tcpConn.OnConnect(func(conn net.Conn) {
-			xagent := agent.NewAgent(gate1, conn, &pb.Session{
+			xagent1 := xagent.NewAgent(gate1, conn, &pb.Session{
 				Uid: rand.Uint64(),
 				Sid: fmt.Sprint("sid====", rand.Uint64()),
 			})
-			agentsManager.BindSID(xagent)
-			xagent.Run()
+			agentsManager.BindSID(xagent1)
+			xagent1.Run()
 		})
 
 		gate1.Register(tcpConn)

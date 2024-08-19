@@ -1,4 +1,4 @@
-package cherryFacade
+package facade
 
 type (
 	// INode 节点信息

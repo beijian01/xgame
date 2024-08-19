@@ -1,4 +1,4 @@
-package cherryError
+package xerr
 
 import (
 	"errors"

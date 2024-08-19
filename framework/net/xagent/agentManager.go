@@ -1,4 +1,4 @@
-package agent
+package xagent
 
 import (
 	cerr "github.com/beijian01/xgame/framework/error"
