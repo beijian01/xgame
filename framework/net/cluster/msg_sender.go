@@ -1,7 +1,7 @@
-package cherryCluster
+package xcluster
 
 import (
-	cherryFacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/pb"
 	"github.com/sirupsen/logrus"
@@ -11,7 +11,7 @@ import (
 type Sender struct {
 	*pb.MsgCommon
 
-	app cherryFacade.IApplication
+	app facade.IApplication
 }
 
 func (s *Sender) Resp(msg proto.Message) {

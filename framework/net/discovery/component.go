@@ -1,7 +1,7 @@
 package xdiscovery
 
 import (
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 )
 
 const (
@@ -9,8 +9,8 @@ const (
 )
 
 type Component struct {
-	cfacade.Component
-	cfacade.IDiscovery
+	facade.Component
+	facade.IDiscovery
 }
 
 func New() *Component {

@@ -3,9 +3,9 @@ package facade
 type (
 	// INode 节点信息
 	INode interface {
-		GetNodeId() string   // 节点id(全局唯一)
-		GetNodeType() string // 节点类型
-		GetAddress() string  // 对外网络监听地址(网关节点用)
+		GetNodeId() string           // 节点id(全局唯一)
+		GetNodeType() string         // 节点类型
+		ListenPorts() map[string]int // 监听端口
 	}
 
 	IApplication interface {

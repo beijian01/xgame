@@ -2,7 +2,7 @@ package main
 
 import (
 	cherry "github.com/beijian01/xgame/framework"
-	cherryFacade "github.com/beijian01/xgame/framework/facade"
+	cherry "github.com/beijian01/xgame/framework/facade"
 	cherryCluster "github.com/beijian01/xgame/framework/net/cluster"
 	cherryDiscovery "github.com/beijian01/xgame/framework/net/discovery"
 	"github.com/beijian01/xgame/framework/net/profile"

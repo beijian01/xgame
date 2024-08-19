@@ -1,4 +1,4 @@
-package cherryCluster
+package xcluster
 
 import (
 	"fmt"

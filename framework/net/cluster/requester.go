@@ -1,9 +1,9 @@
-package cherryCluster
+package xcluster
 
 import (
 	"fmt"
 	cerr "github.com/beijian01/xgame/framework/error"
-	cherryFacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/pb"
 	"google.golang.org/protobuf/proto"
@@ -17,13 +17,13 @@ type (
 		handlers map[uint32]requestCbk // key = mid
 		mid      uint32
 
-		app cherryFacade.IApplication
+		app facade.IApplication
 	}
 
 	requestCbk func(response proto.Message, err error)
 )
 
-func newRpcHandlerMgr(app cherryFacade.IApplication) *requester {
+func newRpcHandlerMgr(app facade.IApplication) *requester {
 	return &requester{
 		handlers: make(map[uint32]requestCbk),
 		app:      app,

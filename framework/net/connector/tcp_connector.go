@@ -1,13 +1,13 @@
 package xconnector
 
 import (
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 	"github.com/sirupsen/logrus"
 )
 
 type (
 	TCPConnector struct {
-		cfacade.Component
+		facade.Component
 		Connector
 		Options
 	}
@@ -18,7 +18,6 @@ func (*TCPConnector) Name() string {
 }
 
 func (t *TCPConnector) OnAfterInit() {
-	go t.Start()
 }
 
 func (t *TCPConnector) OnStop() {
@@ -27,7 +26,7 @@ func (t *TCPConnector) OnStop() {
 
 func NewTCP(address string, opts ...Option) *TCPConnector {
 	if address == "" {
-		logrus.Warn("Create tcp connector fail. GetAddress is null.")
+		logrus.Warn("Create tcp connector fail. ListenPorts is null.")
 		return nil
 	}
 
@@ -55,7 +54,7 @@ func (t *TCPConnector) Start() {
 		logrus.Fatalf("failed to listen: %s", err)
 	}
 
-	logrus.Infof("Tcp connector listening at GetAddress %s", t.address)
+	logrus.Infof("Tcp connector listening at ListenPorts %s", t.address)
 	if t.certFile != "" || t.keyFile != "" {
 		logrus.Infof("certFile = %s, keyFile = %s", t.certFile, t.keyFile)
 	}

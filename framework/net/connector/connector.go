@@ -5,13 +5,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 )
 
 type (
 	Connector struct {
 		listener      net.Listener
-		onConnectFunc cfacade.OnConnectFunc
+		onConnectFunc facade.OnConnectFunc
 		connChan      chan net.Conn
 		running       bool
 	}
@@ -25,7 +25,7 @@ func NewConnector(size int) Connector {
 	return connector
 }
 
-func (p *Connector) OnConnect(fn cfacade.OnConnectFunc) {
+func (p *Connector) OnConnect(fn facade.OnConnectFunc) {
 	if fn != nil {
 		p.onConnectFunc = fn
 	}

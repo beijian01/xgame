@@ -1,7 +1,10 @@
 package xgame
 
 import (
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
+	xcluster "github.com/beijian01/xgame/framework/net/cluster"
+	xdiscovery "github.com/beijian01/xgame/framework/net/discovery"
+	"github.com/beijian01/xgame/framework/net/xagent"
 	"github.com/beijian01/xgame/framework/util"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -12,25 +15,43 @@ import (
 
 type (
 	Application struct {
-		cfacade.INode
-		isFrontend   bool
-		running      int32                // is running
-		dieChan      chan bool            // wait for end application
-		onShutdownFn []func()             // on shutdown execute functions
-		components   []cfacade.IComponent // all components
-		discovery    cfacade.IDiscovery   // discovery component
-		cluster      cfacade.ICluster     // cluster component
-		netParser    cfacade.INetParser   // net packet agent
+		facade.INode
+		isFrontend    bool
+		running       int32               // is running
+		dieChan       chan bool           // wait for end application
+		onAfterInitFn []func()            // on after init execute functions
+		onShutdownFn  []func()            // on shutdown execute functions
+		components    []facade.IComponent // all components
+		discovery     facade.IDiscovery   // discovery component
+		cluster       facade.ICluster     // cluster component
+		netParser     facade.INetParser   // net packet agent
 	}
 )
 
-func NewAppNode(node cfacade.INode, isFrontend bool) *Application {
+func NewAppNode(node facade.INode, isFrontend bool) *Application {
 
 	app := &Application{
 		INode:      node,
 		isFrontend: isFrontend,
 		running:    0,
 		dieChan:    make(chan bool),
+	}
+
+	cluster := xcluster.New(app)
+	app.Register(cluster)
+	app.SetCluster(cluster)
+
+	discovery := xdiscovery.New()
+	app.Register(discovery)
+	app.SetDiscovery(discovery)
+
+	if app.IsFrontend() {
+		netParser := xagent.NewNetParser(app)
+		app.Register(netParser)
+		app.SetNetParser(netParser)
+
+		agents := xagent.NewAgents()
+		app.Register(agents)
 	}
 
 	return app
@@ -48,7 +69,7 @@ func (a *Application) DieChan() chan bool {
 	return a.dieChan
 }
 
-func (a *Application) Register(components ...cfacade.IComponent) {
+func (a *Application) Register(components ...facade.IComponent) {
 	if a.Running() {
 		return
 	}
@@ -69,7 +90,7 @@ func (a *Application) Register(components ...cfacade.IComponent) {
 	}
 }
 
-func (a *Application) Find(name string) cfacade.IComponent {
+func (a *Application) Find(name string) facade.IComponent {
 	if name == "" {
 		return nil
 	}
@@ -83,12 +104,12 @@ func (a *Application) Find(name string) cfacade.IComponent {
 }
 
 // Remove component by name
-func (a *Application) Remove(name string) cfacade.IComponent {
+func (a *Application) Remove(name string) facade.IComponent {
 	if name == "" {
 		return nil
 	}
 
-	var removeComponent cfacade.IComponent
+	var removeComponent facade.IComponent
 	for i := 0; i < len(a.components); i++ {
 		if a.components[i].Name() == name {
 			removeComponent = a.components[i]
@@ -99,7 +120,7 @@ func (a *Application) Remove(name string) cfacade.IComponent {
 	return removeComponent
 }
 
-func (a *Application) All() []cfacade.IComponent {
+func (a *Application) All() []facade.IComponent {
 	return a.components
 }
 
@@ -109,12 +130,6 @@ func (a *Application) OnShutdown(fn ...func()) {
 
 // Startup load components before startup
 func (a *Application) Startup() {
-	//defer func() {
-	//	if r := recover(); r != nil {
-	//		logrus.Error(r)
-	//	}
-	//}()
-
 	if a.Running() {
 		logrus.Error("Application has running.")
 		return
@@ -150,11 +165,6 @@ func (a *Application) Startup() {
 	for _, c := range a.components {
 		logrus.Infof("[component = %s] -> OnAfterInit().", c.Name())
 		c.OnAfterInit()
-	}
-
-	// load net packet agent
-	if a.isFrontend {
-
 	}
 
 	logrus.Info("-------------------------------------------------")
@@ -213,34 +223,22 @@ func (a *Application) Shutdown() {
 	a.dieChan <- true
 }
 
-func (a *Application) Discovery() cfacade.IDiscovery {
+func (a *Application) Discovery() facade.IDiscovery {
 	return a.discovery
 }
 
-func (a *Application) Cluster() cfacade.ICluster {
+func (a *Application) Cluster() facade.ICluster {
 	return a.cluster
 }
 
-func (a *Application) SetDiscovery(discovery cfacade.IDiscovery) {
-	if a.Running() || discovery == nil {
-		return
-	}
-
+func (a *Application) SetDiscovery(discovery facade.IDiscovery) {
 	a.discovery = discovery
 }
 
-func (a *Application) SetCluster(cluster cfacade.ICluster) {
-	if a.Running() || cluster == nil {
-		return
-	}
-
+func (a *Application) SetCluster(cluster facade.ICluster) {
 	a.cluster = cluster
 }
 
-func (a *Application) SetNetParser(netParser cfacade.INetParser) {
-	if a.Running() || netParser == nil {
-		return
-	}
-
+func (a *Application) SetNetParser(netParser facade.INetParser) {
 	a.netParser = netParser
 }

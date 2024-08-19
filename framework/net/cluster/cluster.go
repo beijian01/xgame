@@ -1,4 +1,4 @@
-package cherryCluster
+package xcluster
 
 import (
 	"bytes"
@@ -9,14 +9,14 @@ import (
 	"time"
 
 	cerr "github.com/beijian01/xgame/framework/error"
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 
 	"github.com/nats-io/nats.go"
 )
 
 type (
 	Cluster struct {
-		app        cfacade.IApplication
+		app        facade.IApplication
 		bufferSize int
 		prefix     string
 		natsSub    *natsSubject
@@ -33,7 +33,7 @@ func (p *Cluster) ListenMessage(cbk any) {
 func (p *Cluster) RegisterResponse(resp proto.Message) {
 	p.msgHandlers.RegisterResponse(resp)
 }
-func (p *Cluster) SetDefaultHandler(handler cfacade.ReqMsgHandler) {
+func (p *Cluster) SetDefaultHandler(handler facade.ReqMsgHandler) {
 	p.msgHandlers.setDefaultHandler(handler)
 }
 
@@ -51,7 +51,6 @@ func (p *Cluster) PublishMsg(nodeId string, msg proto.Message) error {
 	common := &pb.MsgCommon{
 		SourceId: p.app.GetNodeId(),
 		TargetId: nodeId,
-		MsgType:  pb.MsgType_SvrMsgTypPublish,
 	}
 	data, err := packet.PackMessage(common, msg)
 	if err != nil {
@@ -69,13 +68,11 @@ func (p *Cluster) RequestAsync(nodeType string, req proto.Message, cbk func(resp
 	return p.msgHandlers.requester.requestAsync(nodeType, req, cbk)
 }
 
-func NewCluster(app cfacade.IApplication) cfacade.ICluster {
+func newCluster(app facade.IApplication) facade.ICluster {
 	cluster := &Cluster{
-		app:        app,
-		bufferSize: 1024,
-		prefix:     "node",
-		//natsSub:       newNatsSubject(getRemoteSubject()),
-		//natsConn:      nil,
+		app:         app,
+		bufferSize:  1024,
+		prefix:      "node",
 		msgHandlers: NewMessageHandlerMgr(app),
 	}
 	cluster.natsConn = NewNatsConn()

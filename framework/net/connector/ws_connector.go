@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"time"
 
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 	"github.com/gorilla/websocket"
 )
 
 type (
 	WSConnector struct {
-		cfacade.Component
+		facade.Component
 		Connector
 		Options
 		upgrade *websocket.Upgrader
@@ -75,7 +75,7 @@ func (w *WSConnector) Start() {
 		logrus.Fatalf("failed to listen: %s", err)
 	}
 
-	logrus.Infof("Websocket connector listening at GetAddress %s", w.address)
+	logrus.Infof("Websocket connector listening at ListenPorts %s", w.address)
 	if w.certFile != "" || w.keyFile != "" {
 		logrus.Infof("certFile = %s, keyFile = %s", w.certFile, w.keyFile)
 	}

@@ -1,9 +1,13 @@
 package profile
 
 type NodeCfg struct {
-	NodeId   string `json:"node_id"`
-	NodeType string `json:"node_type"`
-	Address  string `json:"address"`
+	NodeId   string         `json:"node_id"`
+	NodeType string         `json:"node_type"`
+	Address  map[string]int `json:"address"`
+}
+
+func (n *NodeCfg) ListenPorts() map[string]int {
+	return n.Address
 }
 
 func (n *NodeCfg) GetNodeId() string {
@@ -12,8 +16,4 @@ func (n *NodeCfg) GetNodeId() string {
 
 func (n *NodeCfg) GetNodeType() string {
 	return n.NodeType
-}
-
-func (n *NodeCfg) GetAddress() string {
-	return n.Address
 }

@@ -1,7 +1,7 @@
 package xagent
 
 import (
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/framework/util"
 	"github.com/beijian01/xgame/pb"
@@ -19,25 +19,25 @@ const (
 
 type (
 	Agent struct {
-		cfacade.IApplication             // app
-		conn                 net.Conn    // low-level conn fd
-		state                int32       // current agent state
-		session              *pb.Session // session
-		chDie                chan struct {
+		facade.IApplication             // app
+		conn                net.Conn    // low-level conn fd
+		state               int32       // current agent state
+		session             *pb.Session // session
+		chDie               chan struct {
 		} // wait for close
 		//chPending   chan *packet. // push message queue
 		chWrite     chan []byte   // push bytes queue
 		lastAt      int64         // last heartbeat unix time stamp
 		onCloseFunc []OnCloseFunc // on close agent
 
-		agentMgr  *Manager
+		agentMgr  *Agents
 		chPending chan *pendingMsg
 	}
 
 	OnCloseFunc func(*Agent)
 )
 
-func NewAgent(app cfacade.IApplication, conn net.Conn, session *pb.Session) *Agent {
+func NewAgent(app facade.IApplication, conn net.Conn, session *pb.Session) *Agent {
 	agent := &Agent{
 		IApplication: app,
 		conn:         conn,

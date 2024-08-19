@@ -8,31 +8,31 @@ import (
 
 	cerr "github.com/beijian01/xgame/framework/error"
 
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 )
 
 type DiscoveryDefault struct {
-	memberMap        sync.Map // key:nodeId,value:cfacade.IMember
-	onAddListener    []cfacade.MemberListener
-	onRemoveListener []cfacade.MemberListener
+	memberMap        sync.Map // key:nodeId,value:facade.IMember
+	onAddListener    []facade.MemberListener
+	onRemoveListener []facade.MemberListener
 }
 
 func (n *DiscoveryDefault) PreInit() {
 	n.memberMap = sync.Map{}
 }
 
-func (n *DiscoveryDefault) Load(_ cfacade.IApplication) {
+func (n *DiscoveryDefault) Load(_ facade.IApplication) {
 }
 
 func (n *DiscoveryDefault) Name() string {
 	return "default"
 }
 
-func (n *DiscoveryDefault) Map() map[string]cfacade.IMember {
-	memberMap := map[string]cfacade.IMember{}
+func (n *DiscoveryDefault) Map() map[string]facade.IMember {
+	memberMap := map[string]facade.IMember{}
 
 	n.memberMap.Range(func(key, value any) bool {
-		if member, ok := value.(cfacade.IMember); ok {
+		if member, ok := value.(facade.IMember); ok {
 			memberMap[member.GetNodeId()] = member
 		}
 		return true
@@ -41,11 +41,11 @@ func (n *DiscoveryDefault) Map() map[string]cfacade.IMember {
 	return memberMap
 }
 
-func (n *DiscoveryDefault) ListByType(nodeType string, filterNodeId ...string) []cfacade.IMember {
-	var memberList []cfacade.IMember
+func (n *DiscoveryDefault) ListByType(nodeType string, filterNodeId ...string) []facade.IMember {
+	var memberList []facade.IMember
 
 	n.memberMap.Range(func(key, value any) bool {
-		member := value.(cfacade.IMember)
+		member := value.(facade.IMember)
 		if member.GetNodeType() == nodeType {
 			if _, ok := util.StringIn(member.GetNodeId(), filterNodeId); !ok {
 				memberList = append(memberList, member)
@@ -58,7 +58,7 @@ func (n *DiscoveryDefault) ListByType(nodeType string, filterNodeId ...string) [
 	return memberList
 }
 
-func (n *DiscoveryDefault) Random(nodeType string) (cfacade.IMember, bool) {
+func (n *DiscoveryDefault) Random(nodeType string) (facade.IMember, bool) {
 	memberList := n.ListByType(nodeType)
 	memberLen := len(memberList)
 
@@ -81,7 +81,7 @@ func (n *DiscoveryDefault) GetType(nodeId string) (nodeType string, err error) {
 	return member.GetNodeType(), nil
 }
 
-func (n *DiscoveryDefault) GetMember(nodeId string) (cfacade.IMember, bool) {
+func (n *DiscoveryDefault) GetMember(nodeId string) (facade.IMember, bool) {
 	if nodeId == "" {
 		return nil, false
 	}
@@ -91,10 +91,10 @@ func (n *DiscoveryDefault) GetMember(nodeId string) (cfacade.IMember, bool) {
 		return nil, false
 	}
 
-	return value.(cfacade.IMember), found
+	return value.(facade.IMember), found
 }
 
-func (n *DiscoveryDefault) AddMember(member cfacade.IMember) {
+func (n *DiscoveryDefault) AddMember(member facade.IMember) {
 	_, loaded := n.memberMap.LoadOrStore(member.GetNodeId(), member)
 	if loaded {
 		logrus.Warnf("duplicate nodeId. [nodeType = %s], [nodeId = %s]",
@@ -114,7 +114,7 @@ func (n *DiscoveryDefault) AddMember(member cfacade.IMember) {
 func (n *DiscoveryDefault) RemoveMember(nodeId string) {
 	value, loaded := n.memberMap.LoadAndDelete(nodeId)
 	if loaded {
-		member := value.(cfacade.IMember)
+		member := value.(facade.IMember)
 		logrus.Debugf("remove member. [member = %s]", member)
 
 		for _, listener := range n.onRemoveListener {
@@ -123,14 +123,14 @@ func (n *DiscoveryDefault) RemoveMember(nodeId string) {
 	}
 }
 
-func (n *DiscoveryDefault) OnAddMember(listener cfacade.MemberListener) {
+func (n *DiscoveryDefault) OnAddMember(listener facade.MemberListener) {
 	if listener == nil {
 		return
 	}
 	n.onAddListener = append(n.onAddListener, listener)
 }
 
-func (n *DiscoveryDefault) OnRemoveMember(listener cfacade.MemberListener) {
+func (n *DiscoveryDefault) OnRemoveMember(listener facade.MemberListener) {
 	if listener == nil {
 		return
 	}

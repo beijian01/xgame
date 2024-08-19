@@ -1,7 +1,7 @@
-package cherryCluster
+package xcluster
 
 import (
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 )
 
 const (
@@ -9,14 +9,14 @@ const (
 )
 
 type Component struct {
-	cfacade.Component
-	cfacade.ICluster
-
-	DoOnAfterInit []func()
+	facade.Component
+	facade.ICluster
 }
 
-func New() *Component {
-	return &Component{}
+func New(app facade.IApplication) *Component {
+	return &Component{
+		ICluster: newCluster(app),
+	}
 }
 
 func (c *Component) Name() string {
@@ -24,19 +24,11 @@ func (c *Component) Name() string {
 }
 
 func (c *Component) Init() {
-	c.ICluster = c.loadCluster()
 	c.ICluster.Init()
 }
 
 func (c *Component) OnAfterInit() {
-	for _, fn := range c.DoOnAfterInit {
-		fn()
-	}
 }
 func (c *Component) OnStop() {
 	c.ICluster.Stop()
-}
-
-func (c *Component) loadCluster() cfacade.ICluster {
-	return NewCluster(c.App())
 }

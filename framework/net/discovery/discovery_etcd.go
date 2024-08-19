@@ -3,7 +3,7 @@ package xdiscovery
 import (
 	"context"
 	"fmt"
-	cfacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 	"github.com/beijian01/xgame/pb"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
@@ -22,7 +22,7 @@ var (
 
 // ETCD etcd方式发现服务
 type ETCD struct {
-	app cfacade.IApplication
+	app facade.IApplication
 	DiscoveryDefault
 	prefix  string
 	config  clientv3.Config
@@ -39,7 +39,7 @@ func (p *ETCD) Name() string {
 	return "etcd"
 }
 
-func (p *ETCD) Load(app cfacade.IApplication) {
+func (p *ETCD) Load(app facade.IApplication) {
 	p.DiscoveryDefault.PreInit()
 	p.app = app
 	p.ttl = 10

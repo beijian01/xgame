@@ -2,16 +2,16 @@ package xagent
 
 import (
 	cerr "github.com/beijian01/xgame/framework/error"
-	cherryFacade "github.com/beijian01/xgame/framework/facade"
+	"github.com/beijian01/xgame/framework/facade"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"sync"
 )
 
-const ComponentName = "agents_manager"
+const AgentsName = "agents_manager"
 
-type Manager struct {
-	cherryFacade.Component
+type Agents struct {
+	facade.Component
 
 	lock        sync.RWMutex
 	sidAgentMap map[string]*Agent // sid -> Agent
@@ -20,19 +20,19 @@ type Manager struct {
 	pbRoute *routeMgr
 }
 
-func NewAgents() *Manager {
-	return &Manager{
+func NewAgents() *Agents {
+	return &Agents{
 		sidAgentMap: make(map[string]*Agent),
 		uidMap:      make(map[uint64]string),
 		pbRoute:     newRouteMgr(),
 	}
 }
 
-func (a *Manager) Name() string {
-	return ComponentName
+func (a *Agents) Name() string {
+	return AgentsName
 }
 
-func (a *Manager) BindSID(agent *Agent) {
+func (a *Agents) BindSID(agent *Agent) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -40,7 +40,7 @@ func (a *Manager) BindSID(agent *Agent) {
 	agent.agentMgr = a
 }
 
-func (a *Manager) BindUID(sid string, uid uint64) error {
+func (a *Agents) BindUID(sid string, uid uint64) error {
 	if sid == "" {
 		return cerr.Errorf("[sid = %s] less than 1.", sid)
 	}
@@ -67,7 +67,7 @@ func (a *Manager) BindUID(sid string, uid uint64) error {
 	return nil
 }
 
-func (a *Manager) Unbind(sid string) {
+func (a *Agents) Unbind(sid string) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -86,7 +86,7 @@ func (a *Manager) Unbind(sid string) {
 	}
 }
 
-func (a *Manager) GetAgent(sid string) (*Agent, bool) {
+func (a *Agents) GetAgent(sid string) (*Agent, bool) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -94,7 +94,7 @@ func (a *Manager) GetAgent(sid string) (*Agent, bool) {
 	return agent, found
 }
 
-func (a *Manager) GetAgentWithUID(uid uint64) (*Agent, bool) {
+func (a *Agents) GetAgentWithUID(uid uint64) (*Agent, bool) {
 	if uid < 1 {
 		return nil, false
 	}
@@ -111,21 +111,21 @@ func (a *Manager) GetAgentWithUID(uid uint64) (*Agent, bool) {
 	return agent, found
 }
 
-func (a *Manager) ForeachAgent(fn func(a *Agent)) {
+func (a *Agents) ForeachAgent(fn func(a *Agent)) {
 	for _, agent := range a.sidAgentMap {
 		fn(agent)
 	}
 }
 
-func (a *Manager) Count() int {
+func (a *Agents) Count() int {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 
 	return len(a.sidAgentMap)
 }
 
-func (a *Manager) Init() {
-	a.App().Cluster().SetDefaultHandler(func(ext cherryFacade.ISender, msg proto.Message) {
+func (a *Agents) Init() {
+	a.App().Cluster().SetDefaultHandler(func(ext facade.ISender, msg proto.Message) {
 		agent, exist := a.GetAgent(ext.GetCommon().GetSid())
 		if !exist {
 			logrus.Errorf("[sid = %s] not exist.", ext.GetCommon().GetSid())
@@ -135,6 +135,6 @@ func (a *Manager) Init() {
 	})
 }
 
-func (a *Manager) RouteMessage(msg proto.Message, nodeType string) {
+func (a *Agents) RouteMessage(msg proto.Message, nodeType string) {
 	a.pbRoute.addRoute(msg, nodeType)
 }
