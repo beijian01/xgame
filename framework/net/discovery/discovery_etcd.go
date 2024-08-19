@@ -2,21 +2,20 @@ package xdiscovery
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/beijian01/xgame/framework/facade"
 	"github.com/beijian01/xgame/pb"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/namespace"
 
 	"strings"
-	"time"
 )
 
 var (
-	keyPrefix         = "/cherry/node/"
+	keyPrefix         = "/xgame/node/"
 	registerKeyFormat = keyPrefix + "%s"
 )
 
@@ -43,9 +42,11 @@ func (p *ETCD) Load(app facade.IApplication) {
 	p.DiscoveryDefault.PreInit()
 	p.app = app
 	p.ttl = 10
+	p.prefix = app.Profile().Project // 使用项目名称作为etcd的namespace
+	keyPrefix = fmt.Sprintf("/%s/node/", p.prefix)
+	registerKeyFormat = keyPrefix + "%s"
 
-	// todo etcd 配置加载
-	p.config.Endpoints = []string{"localhost:2379"}
+	p.config.Endpoints = app.Profile().Etcd.Endpoints
 
 	p.init()
 	p.getLeaseId()
@@ -64,19 +65,6 @@ func (p *ETCD) OnStop() {
 	if err != nil {
 		logrus.Warnf("etcd stopping error! err = %v", err)
 	}
-}
-
-func getDialTimeout(config jsoniter.Any) time.Duration {
-	t := time.Duration(config.Get("dial_timeout_second").ToInt64()) * time.Second
-	if t < 1*time.Second {
-		t = 3 * time.Second
-	}
-
-	return t
-}
-
-func getEndPoints(config jsoniter.Any) []string {
-	return strings.Split(config.Get("end_points").ToString(), ",")
 }
 
 func (p *ETCD) init() {
@@ -134,7 +122,8 @@ func (p *ETCD) register() {
 		NodeType: p.app.GetNodeType(),
 	}
 
-	jsonString, err := jsoniter.MarshalToString(registerMember)
+	jsonBytes, err := json.Marshal(registerMember)
+	jsonString := string(jsonBytes)
 	if err != nil {
 		logrus.Fatal(err)
 		return
@@ -180,7 +169,7 @@ func (p *ETCD) watch() {
 
 func (p *ETCD) addMember(data []byte) {
 	member := &pb.Member{}
-	err := jsoniter.Unmarshal(data, member)
+	err := json.Unmarshal(data, member)
 	if err != nil {
 		return
 	}

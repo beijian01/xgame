@@ -1,11 +1,13 @@
 package facade
 
+import "github.com/beijian01/xgame/framework/net/profile"
+
 type (
 	// INode 节点信息
 	INode interface {
-		GetNodeId() string           // 节点id(全局唯一)
-		GetNodeType() string         // 节点类型
-		ListenPorts() map[string]int // 监听端口
+		GetNodeId() string              // 节点id(全局唯一)
+		GetNodeType() string            // 节点类型
+		GetListenPorts() map[string]int // 监听端口
 	}
 
 	IApplication interface {
@@ -22,5 +24,6 @@ type (
 		Shutdown()                         // 关闭应用实例
 		Discovery() IDiscovery             // 发现服务
 		Cluster() ICluster                 // 集群服务
+		Profile() *profile.ClusterCfg
 	}
 )

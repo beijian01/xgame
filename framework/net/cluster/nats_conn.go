@@ -1,6 +1,7 @@
 package xcluster
 
 import (
+	"github.com/beijian01/xgame/framework/net/profile"
 	"github.com/sirupsen/logrus"
 	"time"
 
@@ -10,15 +11,17 @@ import (
 type (
 	NatsConn struct {
 		*nats.Conn
+		*profile.NatsCfg
 		running bool
-		address string
 	}
 )
 
-func NewNatsConn() *NatsConn {
-	conn := &NatsConn{}
-	if conn.address == "" {
-		conn.address = nats.DefaultURL
+func NewNatsConn(cfg *profile.NatsCfg) *NatsConn {
+	conn := &NatsConn{
+		NatsCfg: cfg,
+	}
+	if conn.Address == "" {
+		conn.Address = nats.DefaultURL
 	}
 	return conn
 }
@@ -29,7 +32,7 @@ func (p *NatsConn) Connect() {
 	}
 
 	for {
-		conn, err := nats.Connect(p.address)
+		conn, err := nats.Connect(p.Address)
 		if err != nil {
 			logrus.Warnf("nats connect fail! retrying in 3 seconds. err = %s", err)
 			time.Sleep(3 * time.Second)
@@ -38,7 +41,7 @@ func (p *NatsConn) Connect() {
 
 		p.Conn = conn
 		p.running = true
-		logrus.Infof("nats is connected! [address = %s]", p.address)
+		logrus.Infof("nats is connected! [address = %s]", p.Address)
 		break
 	}
 }

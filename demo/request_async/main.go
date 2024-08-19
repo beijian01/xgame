@@ -21,7 +21,7 @@ func main() {
 		gate1 := cherry.NewAppNode(&profile.NodeCfg{
 			NodeId:   "gate1",
 			NodeType: "gate",
-			Address:  "",
+			Ports:    "",
 		}, false)
 
 		go func() {
@@ -58,7 +58,7 @@ func main() {
 		game1 := cherry.NewAppNode(&profile.NodeCfg{
 			NodeId:   "game1",
 			NodeType: "game",
-			Address:  "",
+			Ports:    "",
 		}, false)
 		cluster := cherryCluster.New()
 		game1.Register(cluster)

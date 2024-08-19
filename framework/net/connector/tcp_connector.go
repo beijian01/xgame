@@ -26,7 +26,7 @@ func (t *TCPConnector) OnStop() {
 
 func NewTCP(address string, opts ...Option) *TCPConnector {
 	if address == "" {
-		logrus.Warn("Create tcp connector fail. ListenPorts is null.")
+		logrus.Warn("Create tcp connector fail. GetListenPorts is null.")
 		return nil
 	}
 
@@ -54,7 +54,7 @@ func (t *TCPConnector) Start() {
 		logrus.Fatalf("failed to listen: %s", err)
 	}
 
-	logrus.Infof("Tcp connector listening at ListenPorts %s", t.address)
+	logrus.Infof("Tcp connector listening at GetListenPorts %s", t.address)
 	if t.certFile != "" || t.keyFile != "" {
 		logrus.Infof("certFile = %s, keyFile = %s", t.certFile, t.keyFile)
 	}

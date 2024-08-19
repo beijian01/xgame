@@ -6,10 +6,11 @@ package climsg;
 
 import "def.proto";
 
-message LoginRequest{
+message CReqLogin{
   string account = 1;
 }
-message LoginResponse{
+message SRespLogin{
   def.ErrCode code = 1;
   uint64 uid = 2;
 }
+

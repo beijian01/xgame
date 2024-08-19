@@ -28,9 +28,9 @@ type (
 
 func NewNetParser(app facade.IApplication) *Parser {
 	p := &Parser{}
-	p.AddConnector(xconnector.NewTCP(fmt.Sprintf(":%d", app.ListenPorts()["tcp"])))
+	p.AddConnector(xconnector.NewTCP(fmt.Sprintf(":%d", app.GetListenPorts()["tcp"])))
 
-	p.AddConnector(xconnector.NewWS(fmt.Sprintf(":%d", app.ListenPorts()["ws"])))
+	p.AddConnector(xconnector.NewWS(fmt.Sprintf(":%d", app.GetListenPorts()["ws"])))
 
 	p.SetOnNewAgent(func(newAgent *Agent) {
 		newAgent.AddOnClose(func(agent *Agent) {

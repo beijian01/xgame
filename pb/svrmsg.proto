@@ -6,10 +6,10 @@ package svrmsg;
 
 import "def.proto";
 
-message AuthRequest{
+message ReqAuth{
    string account = 1;
 }
-message AuthResponse{
+message RespAuth{
   def.ErrCode code = 1;
 }
 message GtGaReqAB{

@@ -19,7 +19,7 @@ func main() {
 		gate1 := cherry.NewAppNode(&profile.NodeCfg{
 			NodeId:   "gate1",
 			NodeType: "gate",
-			Address:  map[string]int{"tcp": 1234},
+			Ports:    map[string]int{"tcp": 1234},
 		}, true)
 
 		gate1.Find(xagent.AgentsName).(*xagent.Agents).RouteMessage((*pb.LoginRequest)(nil), "gate")

@@ -1,0 +1,30 @@
+{
+  "project": "xgame-sgs",
+  "etcd": {
+    "endpoints": ["localhost:2379"],
+    "@dial_timeout": 5,
+    "@username": "user",
+    "@password": "pass"
+  },
+  "nodes": [
+    {
+      "node_id": "gate1",
+      "node_type": "gate",
+      "ports": {
+        "ws": 10101,
+        "tcp": 20202
+      },
+      "is_gate": true
+    },
+    {
+      "node_id": "auth1",
+      "node_type": "auth"
+    }
+  ],
+  "nats": {
+    "address": "nats://localhost:4222",
+    "@user": "nats_user",
+    "@password": "nats_pass",
+    "@reconnect_delay": 10
+  }
+}

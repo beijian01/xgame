@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type LoginRequest struct {
+type CReqLogin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type LoginRequest struct {
 	Account string `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
 }
 
-func (x *LoginRequest) Reset() {
-	*x = LoginRequest{}
+func (x *CReqLogin) Reset() {
+	*x = CReqLogin{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_climsg_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *LoginRequest) Reset() {
 	}
 }
 
-func (x *LoginRequest) String() string {
+func (x *CReqLogin) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LoginRequest) ProtoMessage() {}
+func (*CReqLogin) ProtoMessage() {}
 
-func (x *LoginRequest) ProtoReflect() protoreflect.Message {
+func (x *CReqLogin) ProtoReflect() protoreflect.Message {
 	mi := &file_climsg_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,19 +55,19 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
-func (*LoginRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CReqLogin.ProtoReflect.Descriptor instead.
+func (*CReqLogin) Descriptor() ([]byte, []int) {
 	return file_climsg_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *LoginRequest) GetAccount() string {
+func (x *CReqLogin) GetAccount() string {
 	if x != nil {
 		return x.Account
 	}
 	return ""
 }
 
-type LoginResponse struct {
+type SRespLogin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -76,8 +76,8 @@ type LoginResponse struct {
 	Uid  uint64  `protobuf:"varint,2,opt,name=uid,proto3" json:"uid,omitempty"`
 }
 
-func (x *LoginResponse) Reset() {
-	*x = LoginResponse{}
+func (x *SRespLogin) Reset() {
+	*x = SRespLogin{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_climsg_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -85,13 +85,13 @@ func (x *LoginResponse) Reset() {
 	}
 }
 
-func (x *LoginResponse) String() string {
+func (x *SRespLogin) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LoginResponse) ProtoMessage() {}
+func (*SRespLogin) ProtoMessage() {}
 
-func (x *LoginResponse) ProtoReflect() protoreflect.Message {
+func (x *SRespLogin) ProtoReflect() protoreflect.Message {
 	mi := &file_climsg_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -103,19 +103,19 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
-func (*LoginResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SRespLogin.ProtoReflect.Descriptor instead.
+func (*SRespLogin) Descriptor() ([]byte, []int) {
 	return file_climsg_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *LoginResponse) GetCode() ErrCode {
+func (x *SRespLogin) GetCode() ErrCode {
 	if x != nil {
 		return x.Code
 	}
 	return ErrCode_OK
 }
 
-func (x *LoginResponse) GetUid() uint64 {
+func (x *SRespLogin) GetUid() uint64 {
 	if x != nil {
 		return x.Uid
 	}
@@ -127,16 +127,16 @@ var File_climsg_proto protoreflect.FileDescriptor
 var file_climsg_proto_rawDesc = []byte{
 	0x0a, 0x0c, 0x63, 0x6c, 0x69, 0x6d, 0x73, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x06,
 	0x63, 0x6c, 0x69, 0x6d, 0x73, 0x67, 0x1a, 0x09, 0x64, 0x65, 0x66, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0x28, 0x0a, 0x0c, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x07, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x43, 0x0a, 0x0d, 0x4c,
-	0x6f, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x20, 0x0a, 0x04,
-	0x63, 0x6f, 0x64, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0c, 0x2e, 0x64, 0x65, 0x66,
-	0x2e, 0x45, 0x72, 0x72, 0x43, 0x6f, 0x64, 0x65, 0x52, 0x04, 0x63, 0x6f, 0x64, 0x65, 0x12, 0x10,
-	0x0a, 0x03, 0x75, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x75, 0x69, 0x64,
-	0x42, 0x1f, 0x5a, 0x1d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x62,
-	0x65, 0x69, 0x6a, 0x69, 0x61, 0x6e, 0x30, 0x31, 0x2f, 0x78, 0x67, 0x61, 0x6d, 0x65, 0x2f, 0x70,
-	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x22, 0x25, 0x0a, 0x09, 0x43, 0x52, 0x65, 0x71, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x12, 0x18,
+	0x0a, 0x07, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x07, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x40, 0x0a, 0x0a, 0x53, 0x52, 0x65, 0x73,
+	0x70, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x12, 0x20, 0x0a, 0x04, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0e, 0x32, 0x0c, 0x2e, 0x64, 0x65, 0x66, 0x2e, 0x45, 0x72, 0x72, 0x43, 0x6f,
+	0x64, 0x65, 0x52, 0x04, 0x63, 0x6f, 0x64, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x75, 0x69, 0x64, 0x42, 0x1f, 0x5a, 0x1d, 0x67, 0x69,
+	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x62, 0x65, 0x69, 0x6a, 0x69, 0x61, 0x6e,
+	0x30, 0x31, 0x2f, 0x78, 0x67, 0x61, 0x6d, 0x65, 0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -153,12 +153,12 @@ func file_climsg_proto_rawDescGZIP() []byte {
 
 var file_climsg_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_climsg_proto_goTypes = []any{
-	(*LoginRequest)(nil),  // 0: climsg.LoginRequest
-	(*LoginResponse)(nil), // 1: climsg.LoginResponse
-	(ErrCode)(0),          // 2: def.ErrCode
+	(*CReqLogin)(nil),  // 0: climsg.CReqLogin
+	(*SRespLogin)(nil), // 1: climsg.SRespLogin
+	(ErrCode)(0),       // 2: def.ErrCode
 }
 var file_climsg_proto_depIdxs = []int32{
-	2, // 0: climsg.LoginResponse.code:type_name -> def.ErrCode
+	2, // 0: climsg.SRespLogin.code:type_name -> def.ErrCode
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -174,7 +174,7 @@ func file_climsg_proto_init() {
 	file_def_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_climsg_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*LoginRequest); i {
+			switch v := v.(*CReqLogin); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -186,7 +186,7 @@ func file_climsg_proto_init() {
 			}
 		}
 		file_climsg_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*LoginResponse); i {
+			switch v := v.(*SRespLogin); i {
 			case 0:
 				return &v.state
 			case 1:

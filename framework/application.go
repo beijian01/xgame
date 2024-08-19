@@ -1,9 +1,11 @@
 package xgame
 
 import (
+	"fmt"
 	"github.com/beijian01/xgame/framework/facade"
 	xcluster "github.com/beijian01/xgame/framework/net/cluster"
 	xdiscovery "github.com/beijian01/xgame/framework/net/discovery"
+	"github.com/beijian01/xgame/framework/net/profile"
 	"github.com/beijian01/xgame/framework/net/xagent"
 	"github.com/beijian01/xgame/framework/util"
 	"github.com/sirupsen/logrus"
@@ -25,15 +27,22 @@ type (
 		discovery     facade.IDiscovery   // discovery component
 		cluster       facade.ICluster     // cluster component
 		netParser     facade.INetParser   // net packet agent
+		conf          *profile.ClusterCfg
 	}
 )
 
-func NewAppNode(node facade.INode, isFrontend bool) *Application {
+func (a *Application) Profile() *profile.ClusterCfg {
+	return a.conf
+}
 
+func NewAppNode(conf *profile.ClusterCfg, nodeId string) (*Application, error) {
+	nodeCfg, ok := conf.FindNode(nodeId)
+	if !ok {
+		return nil, fmt.Errorf("[nodeId = %s] not found", nodeId)
+	}
 	app := &Application{
-		INode:      node,
-		isFrontend: isFrontend,
-		running:    0,
+		INode:      nodeCfg,
+		isFrontend: nodeCfg.IsGate,
 		dieChan:    make(chan bool),
 	}
 
@@ -54,7 +63,7 @@ func NewAppNode(node facade.INode, isFrontend bool) *Application {
 		app.Register(agents)
 	}
 
-	return app
+	return app, nil
 }
 
 func (a *Application) IsFrontend() bool {
