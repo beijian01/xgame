@@ -11,7 +11,8 @@ import (
 
 type (
 	MessageHandlerMgr struct {
-		reqHandlers map[uint32]cfacade.ReqMsgHandler // key=消息名的哈希值。请求消息对应的handler都是明确固定的，在启动时注册（map写操作），运行时只有读操作，所以不用加锁
+		defaultHandler cfacade.ReqMsgHandler
+		reqHandlers    map[uint32]cfacade.ReqMsgHandler // key=消息名的哈希值。请求消息对应的handler都是明确固定的，在启动时注册（map写操作），运行时只有读操作，所以不用加锁
 
 		requester *requester
 	}
@@ -21,6 +22,9 @@ func NewMessageHandlerMgr(app cfacade.IApplication) *MessageHandlerMgr {
 	return &MessageHandlerMgr{
 		reqHandlers: make(map[uint32]cfacade.ReqMsgHandler),
 		requester:   newRpcHandlerMgr(app),
+		defaultHandler: func(ext cfacade.ISender, req proto.Message) {
+			logrus.Error("defaultHandler 消息未注册", req)
+		},
 	}
 }
 
@@ -56,7 +60,10 @@ func (p *MessageHandlerMgr) RegisterResponse(resp proto.Message) {
 	}
 
 	p.reqHandlers[id] = func(sender cfacade.ISender, msg proto.Message) {
-		cbk := p.requester.getCallback(sender.GetMid())
+		cbk := p.requester.getCallback(sender.GetCommon().Mid)
 		cbk(msg, nil)
 	}
+}
+func (p *MessageHandlerMgr) setDefaultHandler(handler cfacade.ReqMsgHandler) {
+	p.defaultHandler = handler
 }

@@ -18,6 +18,7 @@ func (*TCPConnector) Name() string {
 }
 
 func (t *TCPConnector) OnAfterInit() {
+	go t.Start()
 }
 
 func (t *TCPConnector) OnStop() {

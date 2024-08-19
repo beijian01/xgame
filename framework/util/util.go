@@ -1,6 +1,8 @@
 package util
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func Try(tryFn func(), catchFn func(errString string)) bool {
 	var hasException = true

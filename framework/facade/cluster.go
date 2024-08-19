@@ -40,11 +40,12 @@ type (
 		RequestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error)   // 同步阻塞 RPC ,请求/回复
 		RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error // 异步 RPC，请求/回复
 		Stop()
-		RegisterResponse(resp proto.Message) // 停止
+		RegisterResponse(resp proto.Message)
+		SetDefaultHandler(handler ReqMsgHandler)
 	}
 
 	ISender interface {
-		GetMid() uint32
+		GetCommon() *pb.MsgCommon
 		Resp(message proto.Message)
 	}
 

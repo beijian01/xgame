@@ -1,4 +1,4 @@
-package parser
+package agent
 
 import (
 	"github.com/sirupsen/logrus"

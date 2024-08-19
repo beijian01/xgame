@@ -33,6 +33,9 @@ func (p *Cluster) ListenMessage(cbk any) {
 func (p *Cluster) RegisterResponse(resp proto.Message) {
 	p.msgHandlers.RegisterResponse(resp)
 }
+func (p *Cluster) SetDefaultHandler(handler cfacade.ReqMsgHandler) {
+	p.msgHandlers.setDefaultHandler(handler)
+}
 
 func (p *Cluster) PublishMsg(nodeId string, msg proto.Message) error {
 	if !p.app.Running() {
@@ -115,7 +118,7 @@ func (p *Cluster) receive() {
 			)
 		}
 
-		// 将 natsMsg.RawMsg 解析成 parser.Message
+		// 将 natsMsg.RawMsg 解析成 agent.Message
 		reader := bytes.NewReader(natsMsg.Data)
 		common, msg, err := packet.ReadMessage(reader)
 		if err != nil {
@@ -126,12 +129,12 @@ func (p *Cluster) receive() {
 			MsgCommon: common,
 			app:       p.app,
 		}
-		handler, exist := p.msgHandlers.reqHandlers[common.Route]
-		if !exist {
-			logrus.Errorf("[receive] handler 未注册, route=%d ", common.Route)
-			return
+		if handler, exist := p.msgHandlers.reqHandlers[common.Route]; exist {
+			handler(sender, msg)
+		} else {
+			p.msgHandlers.defaultHandler(sender, msg)
 		}
-		handler(sender, msg)
+
 	}
 
 	for msg := range p.natsSub.ch {

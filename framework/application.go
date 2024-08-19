@@ -20,7 +20,7 @@ type (
 		components   []cfacade.IComponent // all components
 		discovery    cfacade.IDiscovery   // discovery component
 		cluster      cfacade.ICluster     // cluster component
-		netParser    cfacade.INetParser   // net packet parser
+		netParser    cfacade.INetParser   // net packet agent
 	}
 )
 
@@ -109,11 +109,11 @@ func (a *Application) OnShutdown(fn ...func()) {
 
 // Startup load components before startup
 func (a *Application) Startup() {
-	defer func() {
-		if r := recover(); r != nil {
-			logrus.Error(r)
-		}
-	}()
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		logrus.Error(r)
+	//	}
+	//}()
 
 	if a.Running() {
 		logrus.Error("Application has running.")
@@ -152,12 +152,9 @@ func (a *Application) Startup() {
 		c.OnAfterInit()
 	}
 
-	// load net packet parser
+	// load net packet agent
 	if a.isFrontend {
-		if a.netParser == nil {
-			logrus.Panic("net packet parser is nil.")
-		}
-		a.netParser.Load(a)
+
 	}
 
 	logrus.Info("-------------------------------------------------")

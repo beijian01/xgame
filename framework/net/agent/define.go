@@ -1,7 +1,9 @@
-package parser
+package agent
 
 import (
 	"encoding/binary"
+	"github.com/beijian01/xgame/pb"
+	"google.golang.org/protobuf/proto"
 	"time"
 )
 
@@ -31,4 +33,9 @@ func SetEndian(e binary.ByteOrder) {
 	if e != nil {
 		endian = e
 	}
+}
+
+type pendingMsg struct {
+	common *pb.MsgCommon
+	msg    proto.Message
 }

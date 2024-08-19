@@ -1,4 +1,4 @@
-package parser
+package agent
 
 import (
 	cfacade "github.com/beijian01/xgame/framework/facade"
@@ -30,32 +30,32 @@ type (
 		lastAt      int64         // last heartbeat unix time stamp
 		onCloseFunc []OnCloseFunc // on close agent
 
-		agentMgr *AgentManager
+		agentMgr  *Manager
+		chPending chan *pendingMsg
 	}
 
 	OnCloseFunc func(*Agent)
 )
 
-func NewAgent(app cfacade.IApplication, conn net.Conn, session *pb.Session) Agent {
-	agent := Agent{
+func NewAgent(app cfacade.IApplication, conn net.Conn, session *pb.Session) *Agent {
+	agent := &Agent{
 		IApplication: app,
 		conn:         conn,
 		state:        AgentInit,
 		session:      session,
 		chDie:        make(chan struct{}),
-		//chPending:    make(chan *packet.Message, writeBacklog),
-		chWrite:     make(chan []byte, writeBacklog),
-		lastAt:      0,
-		onCloseFunc: nil,
+		chPending:    make(chan *pendingMsg, writeBacklog),
+		chWrite:      make(chan []byte, writeBacklog),
+		lastAt:       0,
+		onCloseFunc:  nil,
 	}
 
 	agent.session.Ip = agent.RemoteAddr()
 	agent.SetLastAt()
 
-	logrus.Debugf("[sid = %s,uid = %d] Agent create. [count = %d, ip = %s]",
+	logrus.Debugf("[sid = %s,uid = %d] Agent create., ip = %s]",
 		agent.SID(),
 		agent.UID(),
-		agent.agentMgr.Count(),
 		agent.RemoteAddr(),
 	)
 
@@ -123,14 +123,14 @@ func (a *Agent) readChan() {
 		a.Close()
 	}()
 
-	//for {
-	//	msg, err := packet.ReadMessage(a.conn)
-	//	if err != nil {
-	//		return
-	//	}
-	//
-	//	a.processPacket(msg)
-	//}
+	for {
+		common, msg, err := packet.ReadMessage(a.conn)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+		a.processPacket(common, msg)
+	}
 }
 
 func (a *Agent) writeChan() {
@@ -157,10 +157,10 @@ func (a *Agent) writeChan() {
 					return
 				}
 			}
-		//case pending := <-a.chPending:
-		//	{
-		//		a.processPending(pending)
-		//	}
+		case pending := <-a.chPending:
+			{
+				a.processPending(pending.common, pending.msg)
+			}
 		case bytes := <-a.chWrite:
 			{
 				a.write(bytes)
@@ -207,8 +207,19 @@ func (a *Agent) write(bytes []byte) {
 }
 
 func (a *Agent) processPacket(common *pb.MsgCommon, msg proto.Message) {
+
+	member, ok := a.Discovery().Random(a.agentMgr.pbRoute.route2nodeTyp[common.Route])
+	if !ok {
+		logrus.Warnf("[sid = %s,uid = %d] Node not found. [route = %d]",
+			a.SID(),
+			a.UID(),
+			common.Route,
+		)
+		return
+	}
+
 	common.SourceId = a.GetNodeId()
-	common.TargetId = a.agentMgr.pbRoute.route2nodeTyp[common.Route]
+	common.TargetId = member.GetNodeId()
 	common.Uid = a.UID()
 	common.Sid = a.SID()
 	common.MsgType = pb.MsgType_CliMsgTypRequest
@@ -217,13 +228,16 @@ func (a *Agent) processPacket(common *pb.MsgCommon, msg proto.Message) {
 		logrus.Errorf("pack svr msg error. [error = %s]", err)
 		return
 	}
-	if member, ok := a.Discovery().Random(a.agentMgr.pbRoute.route2nodeTyp[common.Route]); ok {
-		err := a.Cluster().SendBytes(member.GetNodeId(), data)
-		if err != nil {
-			return
-		}
-	}
 
+	err = a.Cluster().SendBytes(member.GetNodeId(), data)
+	if err != nil {
+		logrus.Warnf("[sid = %s,uid = %d] Send bytes error. [error = %s]",
+			a.SID(),
+			a.UID(),
+			err,
+		)
+		return
+	}
 	// update last time
 	a.SetLastAt()
 }
@@ -236,40 +250,41 @@ func (a *Agent) RemoteAddr() string {
 	return ""
 }
 
-//
-//func (a *Agent) processPending(common) {
-//
-//	// encode packet
-//	pkg, err := packet.PackMessage(pending)
-//	if err != nil {
-//		logrus.Warn(err)
-//		return
-//	}
-//
-//	a.SendRaw(pkg)
-//}
-//
-//func (a *Agent) sendPending(message *packet.Message) {
-//	if a.state == AgentClosed {
-//		logrus.Warnf("[sid = %s,uid = %d] Session is closed. [message=%#v]",
-//			a.SID(),
-//			a.UID(),
-//			message,
-//		)
-//		return
-//	}
-//
-//	if len(a.chPending) >= writeBacklog {
-//		logrus.Warnf("[sid = %s,uid = %d] send buffer exceed. [%#v]",
-//			a.SID(),
-//			a.UID(),
-//			message,
-//		)
-//		return
-//	}
-//
-//	a.chPending <- message
-//}
+func (a *Agent) processPending(common *pb.MsgCommon, msg proto.Message) {
+	// encode packet
+	pkg, err := packet.PackMessage(common, msg)
+	if err != nil {
+		logrus.Warn(err)
+		return
+	}
+
+	a.SendRaw(pkg)
+}
+
+func (a *Agent) sendPending(common *pb.MsgCommon, msg proto.Message) {
+	if a.state == AgentClosed {
+		logrus.Warnf("[sid = %s,uid = %d] Session is closed. [message=%#v]",
+			a.SID(),
+			a.UID(),
+			msg,
+		)
+		return
+	}
+
+	if len(a.chPending) >= writeBacklog {
+		logrus.Warnf("[sid = %s,uid = %d] send buffer exceed. [%#v]",
+			a.SID(),
+			a.UID(),
+			msg,
+		)
+		return
+	}
+
+	a.chPending <- &pendingMsg{
+		common: common,
+		msg:    msg,
+	}
+}
 
 func (a *Agent) AddOnClose(fn OnCloseFunc) {
 	if fn != nil {
@@ -277,6 +292,6 @@ func (a *Agent) AddOnClose(fn OnCloseFunc) {
 	}
 }
 
-func (a *Agent) Response(*pb.MsgCommon) {
-	//a.sendPending(msg)
+func (a *Agent) Response(common *pb.MsgCommon, msg proto.Message) {
+	a.sendPending(common, msg)
 }

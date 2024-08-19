@@ -37,3 +37,7 @@ func (s *Sender) Resp(msg proto.Message) {
 		return
 	}
 }
+
+func (s *Sender) GetCommon() *pb.MsgCommon {
+	return s.MsgCommon
+}
