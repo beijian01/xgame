@@ -3,63 +3,13 @@ package log
 import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/natefinch/lumberjack.v2"
-	"os"
 )
 
 var defaultLogger *zap.SugaredLogger
 
 func init() {
-	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "ts",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
 
-	// 创建两个不同的WriteSyncer，一个用于stdout，一个用于stderr
-	stdoutSyncer := zapcore.AddSync(os.Stdout)
-	stderrSyncer := zapcore.AddSync(os.Stderr)
-
-	// 创建一个低级别的日志核心，将所有日志输出到stdout
-	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl < zapcore.ErrorLevel
-	})
-	lowPriorityCore := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),
-		stdoutSyncer,
-		lowPriority,
-	)
-
-	// 创建一个高级别的日志核心，将错误及以上级别的日志输出到stderr
-	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl >= zapcore.ErrorLevel
-	})
-	highPriorityCore := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),
-		stderrSyncer,
-		highPriority,
-	)
-
-	fileCore := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),
-		zapcore.AddSync(&lumberjack.Logger{
-			Filename:   "./logs/myapp.log",
-			MaxSize:    100, // megabytes
-			MaxBackups: 3,
-			MaxAge:     28, // days
-			Compress:   true,
-		}),
-		zap.NewAtomicLevelAt(zap.InfoLevel),
-	)
-	core := zapcore.NewTee(fileCore, lowPriorityCore, highPriorityCore)
+	core := zapcore.NewTee(newFileCore(), newConsoleCore())
 
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
