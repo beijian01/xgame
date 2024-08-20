@@ -3,10 +3,11 @@ package xagent
 import (
 	"fmt"
 	"github.com/beijian01/xgame/framework/facade"
+	log "github.com/beijian01/xgame/framework/logger"
 	xconnector "github.com/beijian01/xgame/framework/net/connector"
 	"github.com/beijian01/xgame/pb"
 	"github.com/nats-io/nuid"
-	"github.com/sirupsen/logrus"
+
 	"net"
 )
 
@@ -34,7 +35,7 @@ func NewNetParser(app facade.IApplication) *Parser {
 
 	p.SetOnNewAgent(func(newAgent *Agent) {
 		newAgent.AddOnClose(func(agent *Agent) {
-			logrus.Infof("agent closed, sid: %s", agent.SID())
+			log.Infof("agent closed, sid: %s", agent.SID())
 		})
 	})
 

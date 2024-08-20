@@ -77,21 +77,6 @@ message Session{
   string sid = 1;
   uint64 uid = 2;
   string ip = 3;
-  string gate_id = 4;
-}
-enum MsgType{
-  MTInvalid = 0;
-
-  CliMsgTypRequest  = 1; // client->server 请求
-  CliMsgTypResponse = 2; // server->client 回复
-  CliMsgTypNotify   = 3; // client->server 通知
-  CliMsgTypPush     = 4; // server->client 推送
-
-  SvrMsgTypRequestWait   = 5; // server->server 同步阻塞RPC
-  SvrMsgTypResponseWait  = 6; // server->server SvrMsgTypRequestWait的回复消息
-  SvrMsgTypPublish       = 7; // server->server 通知
-  SvrMsgTypRequestAsync  = 8; // server->server 异步回调RPC
-  SvrMsgTypResponseAsync = 9; // server->server SvrMsgTypRequestAsync 的回复消息
 }
 // 服务间通信时的通用数据
 message MsgCommon{
@@ -100,8 +85,7 @@ message MsgCommon{
   uint32 mid = 3; // 消息唯一ID
   string sid = 4; // 消息发送方的session
   uint64 uid = 5; // 消息发送方的uid
-  MsgType msgType = 6; // 消息类型
-  uint32 route = 7;
+  uint32 route = 6;
 }
 
 message Member{

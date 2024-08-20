@@ -3,12 +3,13 @@ package xgame
 import (
 	"fmt"
 	"github.com/beijian01/xgame/framework/facade"
+	log "github.com/beijian01/xgame/framework/logger"
 	xcluster "github.com/beijian01/xgame/framework/net/cluster"
 	xdiscovery "github.com/beijian01/xgame/framework/net/discovery"
 	"github.com/beijian01/xgame/framework/net/xagent"
 	"github.com/beijian01/xgame/framework/profile"
 	"github.com/beijian01/xgame/framework/util"
-	"github.com/sirupsen/logrus"
+
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -18,6 +19,7 @@ import (
 type (
 	Application struct {
 		facade.INode
+		facade.IWorker
 		isFrontend    bool
 		running       int32               // is running
 		dieChan       chan bool           // wait for end application
@@ -45,6 +47,7 @@ func NewAppNode(conf *profile.ClusterCfg, nodeId string) (*Application, error) {
 		isFrontend: nodeCfg.IsGate,
 		dieChan:    make(chan bool),
 		conf:       conf,
+		IWorker:    facade.NewWorker(1e5),
 	}
 
 	cluster := xcluster.New(app)
@@ -86,13 +89,13 @@ func (a *Application) Register(components ...facade.IComponent) {
 
 	for _, c := range components {
 		if c == nil || c.Name() == "" {
-			logrus.Errorf("[component = %T] name is nil", c)
+			log.Errorf("[component = %T] name is nil", c)
 			return
 		}
 
 		result := a.Find(c.Name())
 		if result != nil {
-			logrus.Errorf("[component name = %s] is duplicate.", c.Name())
+			log.Errorf("[component name = %s] is duplicate.", c.Name())
 			return
 		}
 
@@ -141,9 +144,11 @@ func (a *Application) OnShutdown(fn ...func()) {
 // Startup load components before startup
 func (a *Application) Startup() {
 	if a.Running() {
-		logrus.Error("Application has running.")
+		log.Error("Application has running.")
 		return
 	}
+
+	defer log.Flush()
 
 	// add connector component
 	if a.netParser != nil {
@@ -152,33 +157,34 @@ func (a *Application) Startup() {
 		}
 	}
 
-	logrus.Info("-------------------------------------------------")
-	logrus.Infof("[nodeId      = %s] application is starting...", a.GetNodeId())
-	logrus.Infof("[nodeType    = %s]", a.GetNodeType())
-	logrus.Infof("[pid         = %d]", os.Getpid())
+	log.Info("-------------------------------------------------")
+	log.Infof("[nodeId      = %s] application is starting...", a.GetNodeId())
+	log.Infof("[nodeType    = %s]", a.GetNodeType())
+	log.Infof("[pid         = %d]", os.Getpid())
 
 	// component list
 	for _, c := range a.components {
 		c.Set(a)
-		logrus.Infof("[component = %s] is added.", c.Name())
+		log.Infof("[component = %s] is added.", c.Name())
 	}
-	logrus.Info("-------------------------------------------------")
+	log.Info("-------------------------------------------------")
 
 	// execute Init()
 	for _, c := range a.components {
-		logrus.Infof("[component = %s] -> OnInit().", c.Name())
+		log.Infof("[component = %s] -> OnInit().", c.Name())
 		c.Init()
 	}
-	logrus.Info("-------------------------------------------------")
+	log.Info("-------------------------------------------------")
 
 	// execute OnAfterInit()
 	for _, c := range a.components {
-		logrus.Infof("[component = %s] -> OnAfterInit().", c.Name())
+		log.Infof("[component = %s] -> OnAfterInit().", c.Name())
 		c.OnAfterInit()
 	}
 
-	logrus.Info("-------------------------------------------------")
+	log.Info("-------------------------------------------------")
 
+	a.IWorker.Run()
 	// set application is running
 	atomic.AddInt32(&a.running, 1)
 
@@ -187,22 +193,22 @@ func (a *Application) Startup() {
 
 	select {
 	case <-a.dieChan:
-		logrus.Info("invoke shutdown().")
+		log.Info("invoke shutdown().")
 	case s := <-sg:
-		logrus.Infof("receive shutdown signal = %v.", s)
+		log.Infof("receive shutdown signal = %v.", s)
 	}
 
 	// stop status
 	atomic.StoreInt32(&a.running, 0)
 
-	logrus.Info("------- application will shutdown -------")
+	log.Info("------- application will shutdown -------")
 
 	if a.onShutdownFn != nil {
 		for _, f := range a.onShutdownFn {
 			util.Try(func() {
 				f()
 			}, func(errString string) {
-				logrus.Warnf("[onShutdownFn] error = %s", errString)
+				log.Warnf("[onShutdownFn] error = %s", errString)
 			})
 		}
 	}
@@ -210,26 +216,27 @@ func (a *Application) Startup() {
 	//all components in reverse order
 	for i := len(a.components) - 1; i >= 0; i-- {
 		util.Try(func() {
-			logrus.Infof("[component = %s] -> OnBeforeStop().", a.components[i].Name())
+			log.Infof("[component = %s] -> OnBeforeStop().", a.components[i].Name())
 			a.components[i].OnBeforeStop()
 		}, func(errString string) {
-			logrus.Warnf("[component = %s] -> OnBeforeStop(). error = %s", a.components[i].Name(), errString)
+			log.Warnf("[component = %s] -> OnBeforeStop(). error = %s", a.components[i].Name(), errString)
 		})
 	}
 
 	for i := len(a.components) - 1; i >= 0; i-- {
 		util.Try(func() {
-			logrus.Infof("[component = %s] -> OnStop().", a.components[i].Name())
+			log.Infof("[component = %s] -> OnStop().", a.components[i].Name())
 			a.components[i].OnStop()
 		}, func(errString string) {
-			logrus.Warnf("[component = %s] -> OnStop(). error = %s", a.components[i].Name(), errString)
+			log.Warnf("[component = %s] -> OnStop(). error = %s", a.components[i].Name(), errString)
 		})
 	}
 
-	logrus.Info("------- application has been shutdown... -------")
+	log.Info("------- application has been shutdown... -------")
 }
 
 func (a *Application) Shutdown() {
+	a.IWorker.Fini()
 	a.dieChan <- true
 }
 

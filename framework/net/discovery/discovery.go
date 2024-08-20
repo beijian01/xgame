@@ -1,8 +1,9 @@
 package xdiscovery
 
 import (
+	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/beijian01/xgame/framework/util"
-	"github.com/sirupsen/logrus"
+
 	"math/rand"
 	"sync"
 
@@ -97,7 +98,7 @@ func (n *DiscoveryDefault) GetMember(nodeId string) (facade.IMember, bool) {
 func (n *DiscoveryDefault) AddMember(member facade.IMember) {
 	_, loaded := n.memberMap.LoadOrStore(member.GetNodeId(), member)
 	if loaded {
-		logrus.Warnf("duplicate nodeId. [nodeType = %s], [nodeId = %s]",
+		log.Warnf("duplicate nodeId. [nodeType = %s], [nodeId = %s]",
 			member.GetNodeType(),
 			member.GetNodeId(),
 		)
@@ -108,14 +109,14 @@ func (n *DiscoveryDefault) AddMember(member facade.IMember) {
 		listener(member)
 	}
 
-	logrus.Debugf("addMember new member. [member = %s]", member)
+	log.Debugf("addMember new member. [member = %s]", member)
 }
 
 func (n *DiscoveryDefault) RemoveMember(nodeId string) {
 	value, loaded := n.memberMap.LoadAndDelete(nodeId)
 	if loaded {
 		member := value.(facade.IMember)
-		logrus.Debugf("remove member. [member = %s]", member)
+		log.Debugf("remove member. [member = %s]", member)
 
 		for _, listener := range n.onRemoveListener {
 			listener(member)

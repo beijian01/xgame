@@ -2,9 +2,10 @@ package xcluster
 
 import (
 	"bytes"
+	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/pb"
-	"github.com/sirupsen/logrus"
+
 	"google.golang.org/protobuf/proto"
 	"time"
 
@@ -86,7 +87,7 @@ func (p *Cluster) Init() {
 
 	go p.receive()
 
-	logrus.Info("nats cluster execute OnInit().")
+	log.Info("nats cluster execute OnInit().")
 }
 
 func (p *Cluster) Stop() {
@@ -94,7 +95,7 @@ func (p *Cluster) Stop() {
 
 	p.natsConn.Close()
 
-	logrus.Info("nats cluster execute OnStop().")
+	log.Info("nats cluster execute OnStop().")
 }
 
 // 持续接收集群消息并处理
@@ -102,36 +103,37 @@ func (p *Cluster) receive() {
 	var err error
 	p.natsSub.subscription, err = p.natsConn.ChanSubscribe(p.natsSub.subject, p.natsSub.ch)
 	if err != nil {
-		logrus.Errorf("[receive] Subscribe fail. [subject = %s, err = %s]", p.natsSub.subject, err)
+		log.Errorf("[receive] Subscribe fail. [subject = %s, err = %s]", p.natsSub.subject, err)
 		return
 	}
 
 	process := func(natsMsg *nats.Msg) {
 		if dropped, err := p.natsSub.subscription.Dropped(); err != nil {
-			logrus.Errorf("[receive] Dropped messages. [subject = %s, dropped = %d, err = %v]",
+			log.Errorf("[receive] Dropped messages. [subject = %s, dropped = %d, err = %v]",
 				p.natsSub.subject,
 				dropped,
 				err,
 			)
 		}
 
-		// 将 natsMsg.RawMsg 解析成 agent.Message
 		reader := bytes.NewReader(natsMsg.Data)
 		common, msg, err := packet.ReadMessage(reader)
 		if err != nil {
-			logrus.Errorf("[receive] ReadMessage fail. [subject = %s, err = %v]", p.natsSub.subject, err)
+			log.Errorf("[receive] ReadMessage fail. [subject = %s, err = %v]", p.natsSub.subject, err)
 			return
 		}
 		sender := &facade.Sender{
 			MsgCommon: common,
 			App:       p.app,
 		}
-		if handler, exist := p.msgHandlers.reqHandlers[common.Route]; exist {
-			handler(sender, msg)
-		} else {
-			p.msgHandlers.defaultHandler(sender, msg)
-		}
 
+		handler, exist := p.msgHandlers.reqHandlers[common.Route]
+		if !exist {
+			handler = p.msgHandlers.defaultHandler
+		}
+		p.app.Post(func() {
+			handler(sender, msg)
+		})
 	}
 
 	for msg := range p.natsSub.ch {

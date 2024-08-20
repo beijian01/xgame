@@ -3,8 +3,9 @@ package xcluster
 import (
 	"fmt"
 	"github.com/beijian01/xgame/framework/facade"
+	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/beijian01/xgame/framework/net/packet"
-	"github.com/sirupsen/logrus"
+
 	"google.golang.org/protobuf/proto"
 	"reflect"
 )
@@ -23,7 +24,7 @@ func NewMessageHandlerMgr(app facade.IApplication) *MessageHandlerMgr {
 		reqHandlers: make(map[uint32]facade.ReqMsgHandler),
 		requester:   newRpcHandlerMgr(app),
 		defaultHandler: func(ext *facade.Sender, req proto.Message) {
-			logrus.Error("defaultHandler 消息未注册", req)
+			log.Error("defaultHandler 消息未注册", req)
 		},
 	}
 }
@@ -45,7 +46,7 @@ func (p *MessageHandlerMgr) ListenMsg(cbk any) {
 
 	id, err := packet.RegisterMessage(msg)
 	if err != nil {
-		logrus.Panic(err)
+		log.Panic(err)
 	}
 
 	p.reqHandlers[id] = func(sender *facade.Sender, req proto.Message) {
@@ -56,7 +57,7 @@ func (p *MessageHandlerMgr) ListenMsg(cbk any) {
 func (p *MessageHandlerMgr) RegisterResponse(resp proto.Message) {
 	id, err := packet.RegisterMessage(resp)
 	if err != nil {
-		logrus.Panic(err)
+		log.Panic(err)
 	}
 
 	p.reqHandlers[id] = func(sender *facade.Sender, msg proto.Message) {

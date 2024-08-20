@@ -1,8 +1,9 @@
 package xcluster
 
 import (
+	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/beijian01/xgame/framework/profile"
-	"github.com/sirupsen/logrus"
+
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -34,14 +35,14 @@ func (p *NatsConn) Connect() {
 	for {
 		conn, err := nats.Connect(p.Address)
 		if err != nil {
-			logrus.Warnf("nats connect fail! retrying in 3 seconds. err = %s", err)
+			log.Warnf("nats connect fail! retrying in 3 seconds. err = %s", err)
 			time.Sleep(3 * time.Second)
 			continue
 		}
 
 		p.Conn = conn
 		p.running = true
-		logrus.Infof("nats is connected! [address = %s]", p.Address)
+		log.Infof("nats is connected! [address = %s]", p.Address)
 		break
 	}
 }
@@ -50,7 +51,7 @@ func (p *NatsConn) Close() {
 	if p.running {
 		p.running = false
 		p.Conn.Close()
-		logrus.Infof("nats connect execute Close()")
+		log.Infof("nats connect execute Close()")
 	}
 }
 
@@ -61,7 +62,7 @@ func (p *NatsConn) Request(subj string, data []byte, timeout time.Duration) (*na
 func (p *NatsConn) ChanExecute(subject string, msgChan chan *nats.Msg, process func(msg *nats.Msg)) {
 	_, chanErr := p.ChanSubscribe(subject, msgChan)
 	if chanErr != nil {
-		logrus.Error("subscribe fail. [subject = %s, err = %s]", subject, chanErr)
+		log.Error("subscribe fail. [subject = %s, err = %s]", subject, chanErr)
 		return
 	}
 

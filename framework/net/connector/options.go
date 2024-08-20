@@ -1,7 +1,7 @@
 package xconnector
 
 import (
-	"github.com/sirupsen/logrus"
+	log "github.com/beijian01/xgame/framework/logger"
 )
 
 type (
@@ -21,7 +21,7 @@ func WithCert(certFile, keyFile string) Option {
 			o.certFile = certFile
 			o.keyFile = keyFile
 		} else {
-			logrus.Errorf("Cert config error.[cert = %s,key = %s]", certFile, keyFile)
+			log.Errorf("Cert config error.[cert = %s,key = %s]", certFile, keyFile)
 		}
 	}
 }

@@ -3,7 +3,8 @@ package xagent
 import (
 	cerr "github.com/beijian01/xgame/framework/error"
 	"github.com/beijian01/xgame/framework/facade"
-	"github.com/sirupsen/logrus"
+	log "github.com/beijian01/xgame/framework/logger"
+
 	"google.golang.org/protobuf/proto"
 	"sync"
 )
@@ -82,7 +83,7 @@ func (a *Agents) Unbind(sid string) {
 	sidCount := len(a.sidAgentMap)
 	uidCount := len(a.uidMap)
 	if sidCount == 0 || uidCount == 0 {
-		logrus.Infof("Unbind agent sid = %s, sidCount = %d, uidCount = %d", sid, sidCount, uidCount)
+		log.Infof("Unbind agent sid = %s, sidCount = %d, uidCount = %d", sid, sidCount, uidCount)
 	}
 }
 
@@ -128,7 +129,7 @@ func (a *Agents) Init() {
 	a.App().Cluster().SetDefaultHandler(func(ext *facade.Sender, msg proto.Message) {
 		agent, exist := a.GetAgent(ext.GetCommon().GetSid())
 		if !exist {
-			logrus.Errorf("[sid = %s] not exist.", ext.GetCommon().GetSid())
+			log.Errorf("[sid = %s] not exist.", ext.GetCommon().GetSid())
 			return
 		}
 		agent.Response(ext.GetCommon(), msg)

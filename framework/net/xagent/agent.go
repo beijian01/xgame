@@ -2,10 +2,11 @@ package xagent
 
 import (
 	"github.com/beijian01/xgame/framework/facade"
+	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/framework/util"
 	"github.com/beijian01/xgame/pb"
-	"github.com/sirupsen/logrus"
+
 	"google.golang.org/protobuf/proto"
 	"net"
 	"sync/atomic"
@@ -53,7 +54,7 @@ func NewAgent(app facade.IApplication, conn net.Conn, session *pb.Session) *Agen
 	agent.session.Ip = agent.RemoteAddr()
 	agent.SetLastAt()
 
-	logrus.Debugf("[sid = %s,uid = %d] Agent create., ip = %s]",
+	log.Debugf("[sid = %s,uid = %d] Agent create., ip = %s]",
 		agent.SID(),
 		agent.UID(),
 		agent.RemoteAddr(),
@@ -116,7 +117,7 @@ func (a *Agent) Run() {
 
 func (a *Agent) readChan() {
 	defer func() {
-		logrus.Debugf("[sid = %s,uid = %d] Agent read chan exit.",
+		log.Debugf("[sid = %s,uid = %d] Agent read chan exit.",
 			a.SID(),
 			a.UID(),
 		)
@@ -126,7 +127,7 @@ func (a *Agent) readChan() {
 	for {
 		common, msg, err := packet.ReadMessage(a.conn)
 		if err != nil {
-			logrus.Error(err)
+			log.Error(err)
 			return
 		}
 		a.processPacket(common, msg)
@@ -136,7 +137,7 @@ func (a *Agent) readChan() {
 func (a *Agent) writeChan() {
 	ticker := time.NewTicker(heartbeatTime)
 	defer func() {
-		logrus.Debugf("[sid = %s,uid = %d] Agent write chan exit.", a.SID(), a.UID())
+		log.Debugf("[sid = %s,uid = %d] Agent write chan exit.", a.SID(), a.UID())
 
 		ticker.Stop()
 		a.closeProcess()
@@ -153,7 +154,7 @@ func (a *Agent) writeChan() {
 			{
 				deadline := time.Now().Add(-heartbeatTime).Unix()
 				if a.lastAt < deadline {
-					logrus.Debugf("[sid = %s,uid = %d] Check heartbeat timeout.", a.SID(), a.UID())
+					log.Debugf("[sid = %s,uid = %d] Check heartbeat timeout.", a.SID(), a.UID())
 					return
 				}
 			}
@@ -175,20 +176,20 @@ func (a *Agent) closeProcess() {
 			fn(a)
 		}
 	}, func(errString string) {
-		logrus.Warn(errString)
+		log.Warn(errString)
 	})
 
 	a.Unbind()
 
 	if err := a.conn.Close(); err != nil {
-		logrus.Debugf("[sid = %s,uid = %d] Agent connect closed. [error = %s]",
+		log.Debugf("[sid = %s,uid = %d] Agent connect closed. [error = %s]",
 			a.SID(),
 			a.UID(),
 			err,
 		)
 	}
 
-	logrus.Debugf("[sid = %s,uid = %d] Agent closed. [count = %d, ip = %s]",
+	log.Debugf("[sid = %s,uid = %d] Agent closed. [count = %d, ip = %s]",
 		a.SID(),
 		a.UID(),
 		a.agentMgr.Count(),
@@ -202,7 +203,7 @@ func (a *Agent) closeProcess() {
 func (a *Agent) write(bytes []byte) {
 	_, err := a.conn.Write(bytes)
 	if err != nil {
-		logrus.Warn(err)
+		log.Warn(err)
 	}
 }
 
@@ -210,7 +211,7 @@ func (a *Agent) processPacket(common *pb.MsgCommon, msg proto.Message) {
 
 	member, ok := a.Discovery().Random(a.agentMgr.pbRoute.route2nodeTyp[common.Route])
 	if !ok {
-		logrus.Warnf("[sid = %s,uid = %d] Node not found. [route = %d]",
+		log.Warnf("[sid = %s,uid = %d] Node not found. [route = %d]",
 			a.SID(),
 			a.UID(),
 			common.Route,
@@ -222,16 +223,15 @@ func (a *Agent) processPacket(common *pb.MsgCommon, msg proto.Message) {
 	common.TargetId = member.GetNodeId()
 	common.Uid = a.UID()
 	common.Sid = a.SID()
-	common.MsgType = pb.MsgType_CliMsgTypRequest
 	data, err := packet.PackMessage(common, msg)
 	if err != nil {
-		logrus.Errorf("pack svr msg error. [error = %s]", err)
+		log.Errorf("pack svr msg error. [error = %s]", err)
 		return
 	}
 
 	err = a.Cluster().SendBytes(member.GetNodeId(), data)
 	if err != nil {
-		logrus.Warnf("[sid = %s,uid = %d] Send bytes error. [error = %s]",
+		log.Warnf("[sid = %s,uid = %d] Send bytes error. [error = %s]",
 			a.SID(),
 			a.UID(),
 			err,
@@ -254,7 +254,7 @@ func (a *Agent) processPending(common *pb.MsgCommon, msg proto.Message) {
 	// encode packet
 	pkg, err := packet.PackMessage(common, msg)
 	if err != nil {
-		logrus.Warn(err)
+		log.Warn(err)
 		return
 	}
 
@@ -263,7 +263,7 @@ func (a *Agent) processPending(common *pb.MsgCommon, msg proto.Message) {
 
 func (a *Agent) sendPending(common *pb.MsgCommon, msg proto.Message) {
 	if a.state == AgentClosed {
-		logrus.Warnf("[sid = %s,uid = %d] Session is closed. [message=%#v]",
+		log.Warnf("[sid = %s,uid = %d] Session is closed. [message=%#v]",
 			a.SID(),
 			a.UID(),
 			msg,
@@ -272,7 +272,7 @@ func (a *Agent) sendPending(common *pb.MsgCommon, msg proto.Message) {
 	}
 
 	if len(a.chPending) >= writeBacklog {
-		logrus.Warnf("[sid = %s,uid = %d] send buffer exceed. [%#v]",
+		log.Warnf("[sid = %s,uid = %d] send buffer exceed. [%#v]",
 			a.SID(),
 			a.UID(),
 			msg,

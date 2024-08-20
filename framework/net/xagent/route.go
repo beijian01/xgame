@@ -1,7 +1,7 @@
 package xagent
 
 import (
-	"github.com/sirupsen/logrus"
+	log "github.com/beijian01/xgame/framework/logger"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"hash/crc32"
@@ -24,10 +24,10 @@ func (rm *routeMgr) addRoute(msg proto.Message, nodeTyp string) {
 	route := crc32.ChecksumIEEE([]byte(name))
 	if _, exist := rm.route2nodeTyp[route]; exist {
 		if rm.route2Name[route] != name {
-			logrus.Fatalf("duplicate route.%v and %v have the same hash value",
+			log.Fatalf("duplicate route.%v and %v have the same hash value",
 				rm.route2Name, name)
 		} else {
-			logrus.Warnf("duplicate route %s", name)
+			log.Warnf("duplicate route %s", name)
 		}
 	}
 	rm.route2nodeTyp[route] = nodeTyp

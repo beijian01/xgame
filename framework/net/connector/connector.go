@@ -2,7 +2,8 @@ package xconnector
 
 import (
 	"crypto/tls"
-	"github.com/sirupsen/logrus"
+	log "github.com/beijian01/xgame/framework/logger"
+
 	"net"
 
 	"github.com/beijian01/xgame/framework/facade"
@@ -51,7 +52,7 @@ func (p *Connector) Stop() {
 	p.running = false
 
 	if err := p.listener.Close(); err != nil {
-		logrus.Errorf("Failed to stop: %s", err)
+		log.Errorf("Failed to stop: %s", err)
 	}
 }
 
@@ -68,7 +69,7 @@ func (p *Connector) GetListener(certFile, keyFile, address string) (net.Listener
 
 	crt, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		logrus.Fatalf("failed to listen: %s", err.Error())
+		log.Fatalf("failed to listen: %s", err.Error())
 	}
 
 	tlsCfg := &tls.Config{

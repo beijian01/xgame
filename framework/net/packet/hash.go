@@ -2,7 +2,8 @@ package packet
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
+	log "github.com/beijian01/xgame/framework/logger"
+
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"hash/crc32"
@@ -38,7 +39,7 @@ func RegisterMessage(msg proto.Message) (uint32, error) {
 	type2id[msgType] = id
 	id2name[id] = msgName
 
-	logrus.Debugf("RegisterMessage %s %d", msgName, id)
+	log.Debugf("RegisterMessage %s %d", msgName, id)
 
 	return id, nil
 }

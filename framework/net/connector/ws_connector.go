@@ -1,7 +1,7 @@
 package xconnector
 
 import (
-	"github.com/sirupsen/logrus"
+	log "github.com/beijian01/xgame/framework/logger"
 	"io"
 	"net/http"
 	"time"
@@ -40,7 +40,7 @@ func (w *WSConnector) OnStop() {
 
 func NewWS(address string, opts ...Option) *WSConnector {
 	if address == "" {
-		logrus.Warn("create websocket fail. address is null.")
+		log.Warn("create websocket fail. address is null.")
 		return nil
 	}
 
@@ -72,12 +72,12 @@ func NewWS(address string, opts ...Option) *WSConnector {
 func (w *WSConnector) Start() {
 	listener, err := w.GetListener(w.certFile, w.keyFile, w.address)
 	if err != nil {
-		logrus.Fatalf("failed to listen: %s", err)
+		log.Fatalf("failed to listen: %s", err)
 	}
 
-	logrus.Infof("Websocket connector listening at GetListenPorts %s", w.address)
+	log.Infof("Websocket connector listening at GetListenPorts %s", w.address)
 	if w.certFile != "" || w.keyFile != "" {
-		logrus.Infof("certFile = %s, keyFile = %s", w.certFile, w.keyFile)
+		log.Infof("certFile = %s, keyFile = %s", w.certFile, w.keyFile)
 	}
 
 	w.Connector.Start()
@@ -98,7 +98,7 @@ func (w *WSConnector) SetUpgrade(upgrade *websocket.Upgrader) {
 func (w *WSConnector) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	wsConn, err := w.upgrade.Upgrade(rw, r, nil)
 	if err != nil {
-		logrus.Infof("Upgrade failure, URI=%s, Error=%s", r.RequestURI, err.Error())
+		log.Infof("Upgrade failure, URI=%s, Error=%s", r.RequestURI, err.Error())
 		return
 	}
 

@@ -12,6 +12,7 @@ type (
 
 	IApplication interface {
 		INode
+		IWorker
 		Running() bool                     // 是否运行中
 		DieChan() chan bool                // die chan
 		IsFrontend() bool                  // 是否为前端节点

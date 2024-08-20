@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/beijian01/xgame/framework/facade"
+	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/beijian01/xgame/pb"
-	"github.com/sirupsen/logrus"
+
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/namespace"
@@ -53,17 +54,17 @@ func (p *ETCD) Load(app facade.IApplication) {
 	p.register()
 	p.watch()
 
-	logrus.Infof("[etcd] init complete! [endpoints = %v] [leaseId = %d]", p.config.Endpoints, p.leaseID)
+	log.Infof("[etcd] init complete! [endpoints = %v] [leaseId = %d]", p.config.Endpoints, p.leaseID)
 }
 
 func (p *ETCD) OnStop() {
 	key := fmt.Sprintf(registerKeyFormat, p.app.GetNodeId())
 	_, err := p.cli.Delete(context.Background(), key)
-	logrus.Infof("etcd stopping! err = %v", err)
+	log.Infof("etcd stopping! err = %v", err)
 
 	err = p.cli.Close()
 	if err != nil {
-		logrus.Warnf("etcd stopping error! err = %v", err)
+		log.Warnf("etcd stopping error! err = %v", err)
 	}
 }
 
@@ -71,7 +72,7 @@ func (p *ETCD) init() {
 	var err error
 	p.cli, err = clientv3.New(p.config)
 	if err != nil {
-		logrus.Fatalf("etcd connect fail. err = %v", err)
+		log.Fatalf("etcd connect fail. err = %v", err)
 		return
 	}
 
@@ -86,7 +87,7 @@ func (p *ETCD) getLeaseId() {
 	//设置租约时间
 	resp, err := p.cli.Grant(context.Background(), p.ttl)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 		return
 	}
 
@@ -95,7 +96,7 @@ func (p *ETCD) getLeaseId() {
 	//设置续租 定期发送需求请求
 	keepaliveChan, err := p.cli.KeepAlive(context.Background(), resp.ID)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 		return
 	}
 
@@ -125,14 +126,14 @@ func (p *ETCD) register() {
 	jsonBytes, err := json.Marshal(registerMember)
 	jsonString := string(jsonBytes)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 		return
 	}
 
 	key := fmt.Sprintf(registerKeyFormat, p.app.GetNodeId())
 	_, err = p.cli.Put(context.Background(), key, jsonString, clientv3.WithLease(p.leaseID))
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 		return
 	}
 }
@@ -140,7 +141,7 @@ func (p *ETCD) register() {
 func (p *ETCD) watch() {
 	resp, err := p.cli.Get(context.Background(), keyPrefix, clientv3.WithPrefix())
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 		return
 	}
 
@@ -181,7 +182,7 @@ func (p *ETCD) removeMember(kv *mvccpb.KeyValue) {
 	key := string(kv.Key)
 	nodeId := strings.ReplaceAll(key, keyPrefix, "")
 	if nodeId == "" {
-		logrus.Warn("remove member nodeId is empty!")
+		log.Warn("remove member nodeId is empty!")
 	}
 
 	p.RemoveMember(nodeId)

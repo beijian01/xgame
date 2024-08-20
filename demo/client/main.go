@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/pb"
-	"github.com/sirupsen/logrus"
+
 	"math/rand"
 	"net"
 	"os"
@@ -26,10 +26,10 @@ func main() {
 		for {
 			common, msg, err := packet.ReadMessage(conn)
 			if err != nil {
-				logrus.Error(err)
+				log.Error(err)
 				continue
 			}
-			logrus.Info(common, msg)
+			log.Info(common, msg)
 		}
 	}()
 
@@ -41,12 +41,12 @@ func main() {
 			Mid: mid,
 		}, &pb.CReqLogin{Account: fmt.Sprintf("布什*戈门 %d", rand.Int())})
 		if err != nil {
-			logrus.Error(err)
+			log.Error(err)
 			return
 		}
 		_, err = conn.Write(data)
 		if err != nil {
-			logrus.Error(err)
+			log.Error(err)
 			return
 		}
 

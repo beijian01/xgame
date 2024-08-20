@@ -1,9 +1,10 @@
 package facade
 
 import (
+	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/pb"
-	"github.com/sirupsen/logrus"
+
 	"google.golang.org/protobuf/proto"
 	"time"
 )
@@ -59,7 +60,6 @@ func (s *Sender) Resp(msg proto.Message) {
 	//s
 	local := &pb.MsgCommon{
 		Mid:      s.Mid,
-		MsgType:  pb.MsgType_SvrMsgTypResponseWait,
 		Route:    s.Route,
 		Sid:      s.Sid,
 		SourceId: s.TargetId,
@@ -69,12 +69,12 @@ func (s *Sender) Resp(msg proto.Message) {
 
 	data, err := packet.PackMessage(local, msg)
 	if err != nil {
-		logrus.Error(err)
+		log.Error(err)
 		return
 	}
 	err = s.App.Cluster().SendBytes(local.TargetId, data)
 	if err != nil {
-		logrus.Error(err)
+		log.Error(err)
 		return
 	}
 }

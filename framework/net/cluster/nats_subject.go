@@ -1,8 +1,8 @@
 package xcluster
 
 import (
+	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/nats-io/nats.go"
-	"github.com/sirupsen/logrus"
 )
 
 type (
@@ -24,7 +24,7 @@ func newNatsSubject(subject string, size int) *natsSubject {
 func (p *natsSubject) stop() {
 	err := p.subscription.Unsubscribe()
 	if err != nil {
-		logrus.Warnf("Unsubscribe error. [subject = %s, err = %v]", p.subject, err)
+		log.Warnf("Unsubscribe error. [subject = %s, err = %v]", p.subject, err)
 	}
 	close(p.ch)
 }
