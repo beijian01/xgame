@@ -7,10 +7,24 @@ import (
 
 var defaultLogger *zap.SugaredLogger
 
+func init() {
+	dev, _ := zap.NewDevelopment()
+	defaultLogger = dev.Sugar()
+}
+
 func Init(config *ZapConfig) {
-	core := zapcore.NewTee(newFileCore(config), newConsoleCore(config))
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
-	defaultLogger = logger.Sugar()
+	var cores []zapcore.Core
+	if config.EnableConsoleWriter {
+		cores = append(cores, newConsoleCore(config))
+	}
+	if config.EnableFileWriter {
+		cores = append(cores, newFileCore(config))
+	}
+	if len(cores) > 0 {
+		core := zapcore.NewTee(cores...)
+		logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+		defaultLogger = logger.Sugar()
+	}
 }
 
 func Flush() {
