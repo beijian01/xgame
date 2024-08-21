@@ -4,7 +4,6 @@ import (
 	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/beijian01/xgame/framework/util"
 
-	"math/rand"
 	"sync"
 
 	cerr "github.com/beijian01/xgame/framework/error"
@@ -57,21 +56,6 @@ func (n *DiscoveryDefault) ListByType(nodeType string, filterNodeId ...string) [
 	})
 
 	return memberList
-}
-
-func (n *DiscoveryDefault) Random(nodeType string) (facade.IMember, bool) {
-	memberList := n.ListByType(nodeType)
-	memberLen := len(memberList)
-
-	if memberLen < 1 {
-		return nil, false
-	}
-
-	if memberLen == 1 {
-		return memberList[0], true
-	}
-
-	return memberList[rand.Intn(len(memberList))], true
 }
 
 func (n *DiscoveryDefault) GetType(nodeId string) (nodeType string, err error) {

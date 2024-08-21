@@ -2,7 +2,6 @@ package xcluster
 
 import (
 	"fmt"
-	cerr "github.com/beijian01/xgame/framework/error"
 	"github.com/beijian01/xgame/framework/facade"
 	"github.com/beijian01/xgame/framework/net/packet"
 	"github.com/beijian01/xgame/pb"
@@ -54,42 +53,34 @@ func (p *requester) getCallback(mid uint32) requestCbk {
 	}
 }
 
-func (p *requester) requestAsync(nodeType string, req proto.Message, cbk func(resp proto.Message, err error)) error {
+func (p *requester) requestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error {
 	mid := p.registerCallback(cbk)
-	node, exist := p.app.Discovery().Random(nodeType)
-	if !exist {
-		return cerr.DiscoveryMemberNotFound
-	}
 	data, err := packet.PackMessage(&pb.MsgCommon{
 		SourceId: p.app.GetNodeId(),
-		TargetId: node.GetNodeId(),
+		TargetId: nodeId,
 		Mid:      mid,
 	}, req)
 	if err != nil {
 		return err
 	}
-	return p.app.Cluster().SendBytes(node.GetNodeId(), data)
+	return p.app.Cluster().SendBytes(nodeId, data)
 }
 
-func (p *requester) requestWait(nodeType string, req proto.Message, timeout time.Duration) (proto.Message, error) {
+func (p *requester) requestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error) {
 	ch := make(chan proto.Message)
 	mid := p.registerCallback(func(response proto.Message, err error) {
 		ch <- response
 	})
-	node, exist := p.app.Discovery().Random(nodeType)
-	if !exist {
-		return nil, cerr.DiscoveryMemberNotFound
-	}
 	data, err := packet.PackMessage(&pb.MsgCommon{
 		SourceId: p.app.GetNodeId(),
-		TargetId: node.GetNodeId(),
+		TargetId: nodeId,
 		Mid:      mid,
 	}, req)
 	if err != nil {
 		return nil, err
 	}
 
-	err = p.app.Cluster().SendBytes(node.GetNodeId(), data)
+	err = p.app.Cluster().SendBytes(nodeId, data)
 	if err != nil {
 		return nil, err
 	}

@@ -61,12 +61,12 @@ func (p *Cluster) PublishMsg(nodeId string, msg proto.Message) error {
 	return p.natsConn.Publish(subject, data)
 }
 
-func (p *Cluster) RequestWait(nodeType string, req proto.Message, timeout time.Duration) (proto.Message, error) {
-	return p.msgHandlers.requester.requestWait(nodeType, req, timeout)
+func (p *Cluster) RequestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error) {
+	return p.msgHandlers.requester.requestWait(nodeId, req, timeout)
 }
 
-func (p *Cluster) RequestAsync(nodeType string, req proto.Message, cbk func(resp proto.Message, err error)) error {
-	return p.msgHandlers.requester.requestAsync(nodeType, req, cbk)
+func (p *Cluster) RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error {
+	return p.msgHandlers.requester.requestAsync(nodeId, req, cbk)
 }
 
 func newCluster(app facade.IApplication) facade.ICluster {
