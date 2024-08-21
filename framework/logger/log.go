@@ -7,12 +7,9 @@ import (
 
 var defaultLogger *zap.SugaredLogger
 
-func init() {
-
-	core := zapcore.NewTee(newFileCore(), newConsoleCore())
-
+func Init(config *ZapConfig) {
+	core := zapcore.NewTee(newFileCore(config), newConsoleCore(config))
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
-
 	defaultLogger = logger.Sugar()
 }
 

@@ -1,5 +1,17 @@
 {
   "project": "xgame-sgs",
+  "log": {
+    "level": "debug",
+    "enableConsoleWriter": true,
+    "enableFileWriter": true,
+    "rotateLog": {
+      "Filename": "./logs/myapp.log",
+      "MaxSize": 100,
+      "MaxBackups": 3,
+      "MaxAge": 28,
+      "Compress": true
+    }
+  },
   "etcd": {
     "endpoints": ["localhost:2379"],
     "@dial_timeout": 5,

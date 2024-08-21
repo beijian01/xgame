@@ -2,6 +2,7 @@ package profile
 
 import (
 	"encoding/json"
+	log "github.com/beijian01/xgame/framework/logger"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"os"
 )
@@ -20,6 +21,8 @@ type ClusterCfg struct {
 	Nats    *NatsCfg         `json:"nats"`
 	//Redis *RedisCfg        `json:"redis"`
 	//Mysql *MysqlCfg        `json:"mysql"`
+
+	Log log.ZapConfig `json:"log"`
 }
 
 func (c *ClusterCfg) FindNode(nodeId string) (*NodeCfg, bool) {

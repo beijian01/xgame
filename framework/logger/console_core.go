@@ -38,26 +38,33 @@ func getColorByLevel(level zapcore.Level) string {
 	}
 }
 
-func newConsoleCore() zapcore.Core {
+func newConsoleCore(config *ZapConfig) zapcore.Core {
+	level, err := zap.ParseAtomicLevel(config.Level)
+	if err != nil {
+		level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	}
+
 	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "ts",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    encodeLevel,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
+		TimeKey:       "ts",
+		LevelKey:      "level",
+		NameKey:       "logger",
+		CallerKey:     "caller",
+		MessageKey:    "msg",
+		StacktraceKey: "stacktrace",
+		LineEnding:    zapcore.DefaultLineEnding,
+		EncodeLevel:   encodeLevel,
+		EncodeTime:    zapcore.ISO8601TimeEncoder,
+		//EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
+
 	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
 
 	consoleCore := zapcore.NewCore(
 		consoleEncoder,
 		zapcore.AddSync(os.Stdout),
-		zap.NewAtomicLevelAt(zap.InfoLevel),
+		level,
 	)
 	return consoleCore
 }

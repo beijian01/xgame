@@ -3,10 +3,14 @@ package log
 import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func newFileCore() zapcore.Core {
+func newFileCore(config *ZapConfig) zapcore.Core {
+	level, err := zap.ParseAtomicLevel(config.Level)
+	if err != nil {
+		level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	}
+
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "ts",
 		LevelKey:       "level",
@@ -16,21 +20,15 @@ func newFileCore() zapcore.Core {
 		StacktraceKey:  "stacktrace",
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
 		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
 	fileCore := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderConfig),
-		zapcore.AddSync(&lumberjack.Logger{
-			Filename:   "./logs/myapp.log",
-			MaxSize:    100, // megabytes
-			MaxBackups: 3,
-			MaxAge:     28, // days
-			Compress:   true,
-		}),
-		zap.NewAtomicLevelAt(zap.InfoLevel),
+		zapcore.AddSync(&config.RotateLog),
+		level,
 	)
 	return fileCore
 }
