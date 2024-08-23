@@ -34,6 +34,9 @@ func NewWorker(maxWorkerLen int) *Worker {
 }
 
 func (w *Worker) Post(f func()) {
+	if w.closed.Load() {
+		return
+	}
 	w.len.Add(1)
 	w.fs <- f
 }
@@ -48,19 +51,19 @@ func (w *Worker) Run() {
 	w.finiWg.Add(1)
 
 	go func() {
+		defer w.finiWg.Done()
 		defer func() {
 			if r := recover(); r != nil {
 				log.Error("worker run panic", r)
+				w.Run() // 挂了重启
 			}
-			if !w.closed.Load() {
-				w.Run()
-			}
-			w.finiWg.Done()
 		}()
+
 		for f := range w.fs {
 			w.len.Add(-1)
 			f()
 		}
+
 	}()
 }
 

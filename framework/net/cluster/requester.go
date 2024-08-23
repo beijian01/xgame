@@ -34,7 +34,8 @@ func (p *requester) registerCallback(h requestCbk) uint32 {
 	if h == nil {
 		return 0
 	}
-
+	p.Lock()
+	defer p.Unlock()
 	p.mid++
 	p.handlers[p.mid] = h
 	return p.mid
