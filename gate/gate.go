@@ -3,7 +3,7 @@ package gate
 import (
 	xgame "github.com/beijian01/xgame/framework"
 	"github.com/beijian01/xgame/framework/facade"
-	"github.com/beijian01/xgame/framework/net/xagent"
+	"github.com/beijian01/xgame/framework/pkg/xagent"
 	"github.com/beijian01/xgame/framework/profile"
 	"github.com/beijian01/xgame/pb"
 )

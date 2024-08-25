@@ -2,7 +2,7 @@ package facade
 
 import (
 	log "github.com/beijian01/xgame/framework/logger"
-	"github.com/beijian01/xgame/framework/net/packet"
+	"github.com/beijian01/xgame/framework/pkg/packet"
 	"github.com/beijian01/xgame/pb"
 
 	"google.golang.org/protobuf/proto"
@@ -41,7 +41,7 @@ type (
 		ListenMessage(cbk any)
 		PublishMsg(nodeId string, msg proto.Message) error                                            // 异步 RPC，仅通知，不需要回复
 		RequestWait(nodeId string, req proto.Message, timeout time.Duration) (proto.Message, error)   // 同步阻塞 RPC ,请求/回复
-		RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error // 异步 RPC，请求/回复
+		RequestAsync(nodeId string, req proto.Message, cbk func(resp proto.Message, err error)) error // 异步回调 RPC，请求/回复
 		Stop()
 		RegisterResponse(resp proto.Message)
 		SetDefaultHandler(handler ReqMsgHandler)

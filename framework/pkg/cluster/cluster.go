@@ -3,7 +3,7 @@ package xcluster
 import (
 	"bytes"
 	log "github.com/beijian01/xgame/framework/logger"
-	"github.com/beijian01/xgame/framework/net/packet"
+	"github.com/beijian01/xgame/framework/pkg/packet"
 	"github.com/beijian01/xgame/pb"
 
 	"google.golang.org/protobuf/proto"

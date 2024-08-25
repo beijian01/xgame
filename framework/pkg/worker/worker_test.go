@@ -1,4 +1,4 @@
-package facade
+package xworker
 
 import (
 	"github.com/go-playground/assert/v2"
@@ -21,7 +21,7 @@ func TestWorker_Run(t *testing.T) {
 
 	w.Post(func() {
 		// 异常
-		panic(3)
+		panic("panic here , 3")
 	})
 
 	var v = -1

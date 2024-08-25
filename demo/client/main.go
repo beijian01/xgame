@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/beijian01/xgame/framework/net/packet"
+	"github.com/beijian01/xgame/framework/pkg/packet"
 	"github.com/beijian01/xgame/pb"
 
 	"math/rand"

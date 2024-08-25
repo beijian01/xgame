@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/beijian01/xgame/framework/facade"
 	log "github.com/beijian01/xgame/framework/logger"
-	xconnector "github.com/beijian01/xgame/framework/net/connector"
+	xconnector "github.com/beijian01/xgame/framework/pkg/connector"
 	"github.com/beijian01/xgame/pb"
 	"github.com/nats-io/nuid"
 

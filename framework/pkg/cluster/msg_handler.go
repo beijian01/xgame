@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/beijian01/xgame/framework/facade"
 	log "github.com/beijian01/xgame/framework/logger"
-	"github.com/beijian01/xgame/framework/net/packet"
+	"github.com/beijian01/xgame/framework/pkg/packet"
 
 	"google.golang.org/protobuf/proto"
 	"reflect"

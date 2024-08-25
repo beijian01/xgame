@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"github.com/beijian01/xgame/framework/facade"
 	log "github.com/beijian01/xgame/framework/logger"
-	xcluster "github.com/beijian01/xgame/framework/net/cluster"
-	xdiscovery "github.com/beijian01/xgame/framework/net/discovery"
-	"github.com/beijian01/xgame/framework/net/xagent"
+	xcluster "github.com/beijian01/xgame/framework/pkg/cluster"
+	xdiscovery "github.com/beijian01/xgame/framework/pkg/discovery"
+	xworker "github.com/beijian01/xgame/framework/pkg/worker"
+	"github.com/beijian01/xgame/framework/pkg/xagent"
 	"github.com/beijian01/xgame/framework/profile"
 	"github.com/beijian01/xgame/framework/util"
 
@@ -28,7 +29,7 @@ type (
 		components    []facade.IComponent // all components
 		discovery     facade.IDiscovery   // discovery component
 		cluster       facade.ICluster     // cluster component
-		netParser     facade.INetParser   // net packet agent
+		netParser     facade.INetParser   // pkg packet agent
 		conf          *profile.ClusterCfg
 	}
 )
@@ -47,25 +48,36 @@ func NewAppNode(conf *profile.ClusterCfg, nodeId string) (*Application, error) {
 		isFrontend: nodeCfg.IsGate,
 		dieChan:    make(chan bool),
 		conf:       conf,
-		IWorker:    facade.NewWorker(1e5),
 	}
 
+	// 注册通用组件
+	// worker：所有handler将放到worker的特定协程中顺序执行
+	worker := xworker.New(1 << 10)
+	app.Register(worker)
+	app.IWorker = worker
+
+	// 集群RPC
 	cluster := xcluster.New(app)
 	app.Register(cluster)
 	app.SetCluster(cluster)
 
+	// 服务发现
 	discovery := xdiscovery.New()
 	app.Register(discovery)
 	app.SetDiscovery(discovery)
 
+	// 如果是前端（网关）节点，则需要对客户端消息进行代理转发
 	if app.IsFrontend() {
+		// 消息解析
 		netParser := xagent.NewNetParser(app)
 		app.Register(netParser)
 		app.SetNetParser(netParser)
-
+		// 客户端代理
 		agents := xagent.NewAgents()
 		app.Register(agents)
 	}
+
+	// 其他特殊组件（仅特定服务需要的组件）由特定服务再自行注册
 
 	return app, nil
 }

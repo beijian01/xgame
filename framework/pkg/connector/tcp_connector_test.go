@@ -12,7 +12,7 @@ func TestNewTCPConnector(t *testing.T) {
 
 	tcp := NewTCP(":9071")
 	tcp.OnConnect(func(conn net.Conn) {
-		log.Infof("new net.Conn = %s", conn.RemoteAddr())
+		log.Infof("new pkg.Conn = %s", conn.RemoteAddr())
 	})
 
 	tcp.Start()
