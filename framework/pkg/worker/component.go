@@ -23,8 +23,8 @@ func (c *Component) Init() {
 }
 
 func (c *Component) OnAfterInit() {
-	c.IWorker.Run()
+	c.IWorker.Start()
 }
 func (c *Component) OnStop() {
-	c.IWorker.Fini()
+	c.IWorker.Stop()
 }

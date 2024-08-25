@@ -7,7 +7,7 @@ import (
 
 func TestWorker_Run(t *testing.T) {
 	w := NewWorker(100)
-	w.Run()
+	w.Start()
 	w.Post(func() {
 		// 正常输出 1
 		t.Log(1)
@@ -31,7 +31,7 @@ func TestWorker_Run(t *testing.T) {
 		v = 4
 	})
 
-	w.Fini() //
+	w.Stop() //
 	// worker要保证panic之后自动恢复，不影响后续的任务
 	assert.Equal(t, v, 4) // 检查第四个任务是否正确执行了
 

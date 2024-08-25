@@ -82,7 +82,7 @@ func (p *Parser) defaultOnConnectFunc(conn net.Conn) {
 	}
 
 	p.agents.BindSID(agent)
-	agent.Run()
+	agent.Start()
 }
 
 func (p *Parser) SetOnNewAgent(fn func(newAgent *Agent)) {

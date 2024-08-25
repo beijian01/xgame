@@ -110,7 +110,7 @@ func (a *Agent) Close() {
 	}
 }
 
-func (a *Agent) Run() {
+func (a *Agent) Start() {
 	go a.writeChan()
 	go a.readChan()
 }

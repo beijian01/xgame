@@ -38,7 +38,7 @@ func (w *Worker) AfterPost(duration time.Duration, f func()) {
 	})
 }
 
-func (w *Worker) Run() {
+func (w *Worker) Start() {
 	w.finiWg.Add(1)
 
 	go func() {
@@ -46,7 +46,7 @@ func (w *Worker) Run() {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Error("worker run panic", r)
-				w.Run() // 挂了重启
+				w.Start() // 挂了重启
 			}
 		}()
 
@@ -58,11 +58,11 @@ func (w *Worker) Run() {
 	}()
 }
 
-func (w *Worker) WorkerLen() int32 {
+func (w *Worker) Len() int32 {
 	return w.len.Load()
 }
 
-func (w *Worker) Fini() {
+func (w *Worker) Stop() {
 	if w.closed.CompareAndSwap(false, true) {
 		close(w.fs)
 		w.finiWg.Wait()

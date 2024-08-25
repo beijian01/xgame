@@ -196,7 +196,7 @@ func (a *Application) Startup() {
 
 	log.Info("-------------------------------------------------")
 
-	a.IWorker.Run()
+	a.IWorker.Start()
 	// set application is running
 	atomic.AddInt32(&a.running, 1)
 
@@ -248,7 +248,7 @@ func (a *Application) Startup() {
 }
 
 func (a *Application) Shutdown() {
-	a.IWorker.Fini()
+	a.IWorker.Stop()
 	a.dieChan <- true
 }
 
