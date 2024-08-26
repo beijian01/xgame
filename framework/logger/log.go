@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -12,13 +13,14 @@ func init() {
 	defaultLogger = dev.Sugar()
 }
 
-func Init(config *ZapConfig) {
+func Init(nodeId, nodeType string, logCfg *ZapConfig) {
 	var cores []zapcore.Core
-	if config.EnableConsoleWriter {
-		cores = append(cores, newConsoleCore(config))
+	if logCfg.EnableConsoleWriter {
+		cores = append(cores, newConsoleCore(logCfg))
 	}
-	if config.EnableFileWriter {
-		cores = append(cores, newFileCore(config))
+	if logCfg.EnableFileWriter {
+		logCfg.RotateLog.Filename = fmt.Sprintf(logCfg.RotateLog.Filename, nodeType, nodeId)
+		cores = append(cores, newFileCore(logCfg))
 	}
 	if len(cores) > 0 {
 		core := zapcore.NewTee(cores...)

@@ -5,11 +5,11 @@ import (
 	"github.com/beijian01/xgame/auth"
 	log "github.com/beijian01/xgame/framework/logger"
 	"github.com/beijian01/xgame/framework/profile"
-	"github.com/beijian01/xgame/gate"
 	"sync"
 )
 
 var conf = flag.String("conf", "profile.json", "config file")
+var nodeId = flag.String("nodeId", "auth1", "nodeId")
 
 func main() {
 
@@ -18,23 +18,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	log.Init(cfg.Project, "all-in-one", &log.ZapConfig{
-		Level:               "debug",
-		EnableConsoleWriter: true,
-	})
+	nodeCfg, exist := cfg.FindNode(*nodeId)
+	if !exist {
+		panic("nodeId not exist")
+	}
+	log.Init(nodeCfg.NodeId, nodeCfg.NodeType, &nodeCfg.Log)
 
 	wg := sync.WaitGroup{}
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		gate.Run(cfg, "gate1")
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		auth.Run(cfg, "auth1")
+		auth.Run(cfg, *nodeId)
 	}()
 
 	wg.Wait()

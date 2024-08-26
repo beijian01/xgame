@@ -1,17 +1,5 @@
 {
   "project": "xgame-sgs",
-  "log": {
-    "level": "debug",
-    "enableConsoleWriter": true,
-    "enableFileWriter": true,
-    "rotateLog": {
-      "Filename": "./logs/myapp.log",
-      "MaxSize": 100,
-      "MaxBackups": 3,
-      "MaxAge": 28,
-      "Compress": true
-    }
-  },
   "etcd": {
     "endpoints": ["localhost:2379"],
     "@dial_timeout": 5,
@@ -26,11 +14,35 @@
         "ws": 10101,
         "tcp": 20202
       },
-      "is_gate": true
+      "is_gate": true,
+      "log": {
+        "level": "debug",
+        "enableConsoleWriter": true,
+        "enableFileWriter": true,
+        "rotateLog": {
+          "Filename": "./logs/%s-%s.log",
+          "MaxSize": 100,
+          "MaxBackups": 3,
+          "MaxAge": 28,
+          "Compress": true
+        }
+      }
     },
     {
       "node_id": "auth1",
-      "node_type": "auth"
+      "node_type": "auth",
+      "log": {
+        "level": "debug",
+        "enableConsoleWriter": true,
+        "enableFileWriter": true,
+        "rotateLog": {
+          "Filename": "./logs/%s-%s.log",
+          "MaxSize": 100,
+          "MaxBackups": 3,
+          "MaxAge": 28,
+          "Compress": true
+        }
+      }
     }
   ],
   "nats": {

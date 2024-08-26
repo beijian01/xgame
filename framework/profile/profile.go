@@ -15,20 +15,19 @@ const (
 )
 
 type ClusterCfg struct {
-	Project string           `json:"project"`
-	Etcd    *clientv3.Config `json:"etcd"`
-	Nodes   []*NodeCfg       `json:"nodes"`
-	Nats    *NatsCfg         `json:"nats"`
-	//Redis *RedisCfg        `json:"redis"`
-	//Mysql *MysqlCfg        `json:"mysql"`
+	Project string          `json:"project"`
+	Etcd    clientv3.Config `json:"etcd"`
+	Nodes   []NodeCfg       `json:"nodes"`
+	Nats    NatsCfg         `json:"nats"`
+	//Redis RedisCfg        `json:"redis"`
+	//Mysql MysqlCfg        `json:"mysql"`
 
-	Log log.ZapConfig `json:"log"`
 }
 
 func (c *ClusterCfg) FindNode(nodeId string) (*NodeCfg, bool) {
 	for _, node := range c.Nodes {
 		if node.NodeId == nodeId {
-			return node, true
+			return &node, true
 		}
 	}
 	return nil, false
@@ -39,6 +38,7 @@ type NodeCfg struct {
 	NodeType string         `json:"node_type"`
 	Ports    map[string]int `json:"ports,omitempty"`
 	IsGate   bool           `json:"is_gate,omitempty"`
+	Log      log.ZapConfig  `json:"log"`
 }
 
 func (n *NodeCfg) GetListenPorts() map[string]int {

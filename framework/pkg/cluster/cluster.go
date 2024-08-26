@@ -76,7 +76,7 @@ func newCluster(app facade.IApplication) facade.ICluster {
 		prefix:      "node",
 		msgHandlers: NewMessageHandlerMgr(app),
 	}
-	cluster.natsConn = NewNatsConn(app.Profile().Nats)
+	cluster.natsConn = NewNatsConn(&app.Profile().Nats)
 	cluster.natsSub = newNatsSubject(getRemoteSubject(cluster.prefix, app.GetNodeType(), app.GetNodeId()), cluster.bufferSize)
 
 	return cluster

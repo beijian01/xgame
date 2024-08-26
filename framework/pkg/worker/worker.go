@@ -16,7 +16,7 @@ type Worker struct {
 
 func NewWorker(maxWorkerLen int) *Worker {
 	if maxWorkerLen == 0 {
-		maxWorkerLen = 1e3
+		maxWorkerLen = 1 << 10
 	}
 	w := &Worker{
 		fs: make(chan func(), maxWorkerLen),
